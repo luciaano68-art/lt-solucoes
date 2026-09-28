@@ -28,3 +28,5 @@ jobs:
       - name: Publicar
         id: deployment
         uses: actions/deploy-pages@v4
+
+# publication refresh 2026-09-28
