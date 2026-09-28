@@ -23,7 +23,9 @@
 <div class="wrap" id="app"></div><div id="modal"></div>
 <script>
 const KEY='lt_agenda_barbearia_v1';
-let db=JSON.parse(localStorage.getItem(KEY)||'null')||{
+let db;
+try{db=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){db=null}
+db=db||{
  business:{name:'Barbearia Modelo',phone:'(49) 99999-9999',address:'Centro',open:'09:00',close:'19:00',interval:30},
  barbers:[{id:1,name:'Carlos',active:true},{id:2,name:'Rafael',active:true}],
  services:[{id:1,name:'Corte',duration:30,price:40,active:true},{id:2,name:'Barba',duration:30,price:30,active:true},{id:3,name:'Corte + Barba',duration:60,price:65,active:true}],
@@ -40,7 +42,8 @@ if(!db.business.lunchStart) db.business.lunchStart='12:00';
 if(!db.business.lunchEnd) db.business.lunchEnd='13:30';
 db.barbers.forEach(b=>{if(!b.weekly)b.weekly={};});
 let view='admin',tab='today',selectedSlot='';
-const save=()=>localStorage.setItem(KEY,JSON.stringify(db));
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}};
+window.onerror=function(msg,src,line,col,err){let box=document.getElementById('fatalError');if(!box){box=document.createElement('div');box.id='fatalError';box.style.cssText='position:fixed;left:10px;right:10px;bottom:10px;z-index:9999;background:#fff0f0;border:2px solid #c33;border-radius:12px;padding:12px;font:14px Arial;color:#7a1111';document.body.appendChild(box)}box.innerHTML='<b>O sistema encontrou um erro.</b><br>Atualize a página. Se continuar, envie esta mensagem: '+String(msg)+' (linha '+line+')';return false};
 const money=v=>(+v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const today=()=>new Date().toISOString().slice(0,10);
 function nav(){return '<div class="tabs"><button class="btn '+(view==='admin'?'':'soft')+'" onclick="view=\'admin\';render()">Painel do barbeiro</button><button class="btn '+(view==='public'?'':'soft')+'" onclick="view=\'public\';render()">Página do cliente</button></div>'}
@@ -73,7 +76,7 @@ function overlap(a,b,c,d){return a<d&&c<b}function min(t){let x=t.split(':').map
 function getDaySchedule(b,date){let d=db.specialDates.find(x=>x.date===date);if(d){if(d.decision==='closed')return {active:false};if(d.decision==='special')return d.special;if(d.decision==='barbers'&&d.specialByBarber&&d.specialByBarber[b.id])return d.specialByBarber[b.id]}let dow=new Date(date+'T12:00:00').getDay(),bw=b&&b.weekly&&b.weekly[dow];return bw||db.business.weekly[dow]||{active:false,open:'09:00',lunchStart:'12:00',lunchEnd:'13:30',close:'19:00'}}
 function makeDaySlots(sch,duration){let r=[],step=duration;for(let n=min(sch.open);n+duration<=min(sch.close);n+=step){let e=n+duration;if(sch.lunchStart&&sch.lunchEnd&&overlap(n,e,min(sch.lunchStart),min(sch.lunchEnd)))continue;r.push(hm(n))}return r}
 function barberScheduleText(b){let n=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];return n.filter((x,d)=>b.weekly&&b.weekly[d]&&b.weekly[d].active).map((x,dummy)=>'').length? n.filter((x,d)=>b.weekly&&b.weekly[d]&&b.weekly[d].active).join(', '):'Sem dias configurados'}
-function bookPublic(){let name=pubName.value.trim(),phone=pubPhone.value.trim(),s=db.services.find(x=>x.id==pubService.value),b=db.barbers.find(x=>x.id==pubBarber.value),date=pubDate.value;if(!name||!phone||!selectedSlot)return alert('Informe nome, WhatsApp e escolha um horário.');if(isBusy(date,selectedSlot,b.id,s.duration))return alert('Esse horário acabou de ficar indisponível. Escolha outro.');addAppointment(name,phone,s,b,date,selectedSlot);selectedSlot='';render();setTimeout(()=>{view='public';render();alert('Agendamento confirmado para '+fmtDate(date)+' às '+db.appointments.at(-1).time+'.');},0)}
+function bookPublic(){let name=pubName.value.trim(),phone=pubPhone.value.trim(),s=db.services.find(x=>x.id==pubService.value),b=db.barbers.find(x=>x.id==pubBarber.value),date=pubDate.value;if(!name||!phone||!selectedSlot)return alert('Informe nome, WhatsApp e escolha um horário.');if(isBusy(date,selectedSlot,b.id,s.duration))return alert('Esse horário acabou de ficar indisponível. Escolha outro.');addAppointment(name,phone,s,b,date,selectedSlot);selectedSlot='';render();setTimeout(()=>{view='public';render();alert('Agendamento confirmado para '+fmtDate(date)+' às '+db.appointments[db.appointments.length-1].time+'.');},0)}
 function addAppointment(name,phone,s,b,date,time){if(!db.clients.some(c=>c.phone===phone))db.clients.push({id:Date.now(),name,phone});db.appointments.push({id:Date.now()+1,client:name,phone,serviceId:s.id,service:s.name,barberId:b.id,barber:b.name,date,time,duration:s.duration,price:s.price,status:'Agendado'});save()}
 function manualBooking(){openM('<h2>Novo agendamento</h2><label>Cliente</label><input id="mn"><label>WhatsApp</label><input id="mp"><label>Serviço</label><select id="ms">'+db.services.filter(s=>s.active).map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('')+'</select><label>Barbeiro</label><select id="mb">'+db.barbers.filter(b=>b.active).map(b=>'<option value="'+b.id+'">'+b.name+'</option>').join('')+'</select><div class="row"><div><label>Data</label><input id="md" type="date" value="'+today()+'"></div><div><label>Hora</label><input id="mt" type="time"></div></div><button class="btn" onclick="saveManual()">Salvar</button>')}
 function saveManual(){let s=db.services.find(x=>x.id==ms.value),b=db.barbers.find(x=>x.id==mb.value);if(!mn.value||!mp.value||!mt.value)return alert('Preencha os dados.');if(isBusy(md.value,mt.value,b.id,s.duration))return alert('Horário indisponível para este barbeiro.');addAppointment(mn.value,mp.value,s,b,md.value,mt.value);closeM();render()}
