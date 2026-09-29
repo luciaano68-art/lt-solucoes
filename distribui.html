@@ -81,7 +81,7 @@ body.menu-open nav{transform:translateX(0)!important}body.menu-open .menu-shade{
 nav button{width:100%!important;min-width:0!important;min-height:48px!important;text-align:left!important;white-space:normal!important;padding:11px 13px!important;font-size:12px!important;border-radius:10px!important}
 #modal .modalbg{left:0!important;width:100%!important}
 }
-</style></head><body>
+</style><link rel="manifest" href="./marcio.webmanifest"><meta name="theme-color" content="#101827"><link rel="apple-touch-icon" href="./marcio-icon-192.png"></head><body>
 <button id="menuToggle" class="menu-toggle" onclick="toggleSideMenu()" aria-label="Abrir menu">☰</button><div id="menuShade" class="menu-shade" onclick="closeSideMenu()"></div>
 <header><div><div class="brand">MARCIO BEBIDAS</div><div class="sub">LT Soluções · Para seu empreendimento</div></div><div id="company"></div></header>
 <div class="layout"><nav id="nav"></nav><main id="main"></main></div><div id="modal"></div>
@@ -209,4 +209,22 @@ function saveStock(){let p=db.products.find(x=>x.id==sp.value);p.stock+=+sq.valu
 function finance(){let sales=db.orders.reduce((s,o)=>s+o.total,0),cost=db.orders.reduce((s,o)=>s+o.cost,0);return '<div class="hero"><div><h1>Financeiro</h1><div class="muted">Resumo de testes</div></div></div><div class="grid"><div class="card metric"><span>Faturamento</span><b>'+R(sales)+'</b></div><div class="card metric"><span>Custo</span><b>'+R(cost)+'</b></div><div class="card metric"><span>Lucro bruto</span><b>'+R(sales-cost)+'</b></div><div class="card metric"><span>Margem</span><b>'+(sales?((sales-cost)/sales*100).toFixed(1):0)+'%</b></div></div>'}
 setInterval(syncCustomerOrders,15000);syncCustomerOrders();
 function openM(h){modal.innerHTML='<div class="modalbg" onclick="if(event.target===this)closeM()"><div class="modal">'+h+'<div style="margin-top:12px"><button class="btn soft" onclick="closeM()">Fechar</button></div></div></div>'}function closeM(){modal.innerHTML=''}render();
+</script><script>
+(() => {
+  let installPrompt;
+  const installed = () => window.matchMedia('(display-mode: standalone)').matches;
+  const button = document.createElement('button');
+  button.type = 'button'; button.className = 'btn soft'; button.textContent = 'Instalar aplicativo';
+  button.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:45;max-width:calc(100vw - 32px)';
+  button.hidden = installed(); document.body.appendChild(button);
+  const style = document.createElement('style'); style.textContent = '@media print{#marcioInstall{display:none!important}}';
+  document.head.appendChild(style); button.id = 'marcioInstall';
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; button.hidden = false; });
+  window.addEventListener('appinstalled', () => { installPrompt = null; button.hidden = true; });
+  button.addEventListener('click', async () => {
+    if (installPrompt) { const prompt = installPrompt; installPrompt = null; await prompt.prompt(); const result = await prompt.userChoice; if (result.outcome === 'accepted') button.hidden = true; }
+    else alert('Para instalar no Android, abra este link no Google Chrome. Toque no menu ⋮ e em “Adicionar à tela inicial” ou “Instalar aplicativo”. Depois confirme a instalação.');
+  });
+  if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./marcio-sw.js').catch(console.error));
+})();
 </script></body></html>
