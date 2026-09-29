@@ -1,0 +1,15 @@
+{
+  "id": "./barbearia-mae-filho",
+  "name": "Barbearia Mãe e Filho",
+  "short_name": "Mãe e Filho",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#11110f",
+  "theme_color": "#11110f",
+  "description": "Agenda e gestão da Barbearia Mãe e Filho",
+  "categories": [
+    "business",
+    "lifestyle"
+  ]
+}
