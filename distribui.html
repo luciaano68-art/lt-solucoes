@@ -41,6 +41,21 @@ header{margin-left:76px;width:calc(100% - 76px)}
 nav{width:76px!important}
 main{margin-left:76px!important;width:calc(100% - 76px)!important}
 }
+</style><style>
+/* Tablet premium: navegação compacta e melhor uso da área útil */
+@media (min-width:601px) and (max-width:1100px){
+header{margin-left:96px!important;width:calc(100% - 96px)!important;min-height:64px!important;padding:10px 18px!important}
+header .brand{font-size:18px!important}header .brand:before{width:32px;height:32px;border-radius:9px;margin-right:9px}.sub{margin-left:42px!important;margin-top:-4px!important;font-size:9px!important}
+.layout{display:block!important;min-height:calc(100vh - 64px)!important}
+nav{position:fixed!important;left:0!important;top:0!important;bottom:0!important;width:96px!important;height:100dvh!important;z-index:60!important;display:flex!important;flex-direction:column!important;gap:3px!important;overflow-y:auto!important;overflow-x:hidden!important;padding:8px 5px!important;background:linear-gradient(180deg,#0b1320,#101827 55%,#151e2c)!important;border:0!important;border-right:1px solid #2b3a50!important;box-shadow:5px 0 18px #0b12201a!important;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}nav button{width:100%!important;min-width:0!important;min-height:55px!important;white-space:normal!important;text-align:center!important;padding:8px 3px!important;margin:0!important;border-radius:11px!important;font-size:9px!important;line-height:1.15!important;color:#d7deea!important}
+nav button:first-child{background:linear-gradient(100deg,#6c5427,#2b251a)!important;color:#ffe0a0!important;box-shadow:inset 3px 0 #e1b55e!important}
+main{margin-left:96px!important;width:calc(100% - 96px)!important;max-width:none!important;padding:18px 20px!important}
+.hero{flex-direction:row!important;align-items:center!important;margin-bottom:12px!important}.hero h1{font-size:27px!important;margin:2px 0!important}.hero>.actions{width:auto!important;display:flex!important}.hero>.btn{padding:10px 14px!important}
+.grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:9px!important}.metric{min-height:92px;padding:13px!important}.metric b{font-size:21px!important;margin-top:7px!important}.metric span{font-size:12px;color:#657084}
+main>h2{font-size:21px;margin:20px 0 8px}.card{margin:8px 0!important;border-radius:14px!important}
+.order-workspace{grid-template-columns:170px minmax(0,1fr)!important}.order-workspace aside{width:170px!important;min-width:170px!important}
+}
 </style></head><body>
 <header><div><div class="brand">MARCIO BEBIDAS</div><div class="sub">LT Soluções · Para seu empreendimento</div></div><div id="company"></div></header>
 <div class="layout"><nav id="nav"></nav><main id="main"></main></div><div id="modal"></div>
