@@ -3,7 +3,7 @@
 <section id="panel" class="hidden"><div class="card"><b>Seus sistemas</b><div class="muted">Escolha o sistema que deseja acessar.</div></div><div id="apps"></div><button class="btn logout" onclick="logout()">Sair</button></section></main>
 <script>
 var USERS={admin:{p:'lt2026',apps:['distribui','barbearia']},marcio:{p:'marcio2026',apps:['distribui']},barbearia:{p:'maeefilho2026',apps:['barbearia']}};
-var APPS={distribui:{name:'Marcio Bebidas',desc:'Distribuidora · pedidos, clientes, produtos, estoque e financeiro',icon:'📦',url:'./distribui.html'},barbearia:{name:'Barbearia Mãe e Filho',desc:'Agenda, barbeiros, serviços e agendamentos',icon:'✂️',url:'./clientes/barbearia-01/?v=20260928-57'}};
+var APPS={distribui:{name:'Marcio Bebidas',desc:'Distribuidora · pedidos, clientes, produtos, estoque e financeiro',icon:'📦',url:'./distribui.html'},barbearia:{name:'Barbearia Mãe e Filho',desc:'Agenda, barbeiros, serviços e agendamentos',icon:'✂️',url:'./clientes/barbearia-01/?v=20260928-58'}};
 function enter(){var u=user.value.trim().toLowerCase(),x=USERS[u];if(!x||pass.value!==x.p){err.textContent='Usuário ou senha incorretos.';return}sessionStorage.setItem('lt_user',u);show(u)}
 function show(u){var x=USERS[u];if(!x)return;login.classList.add('hidden');panel.classList.remove('hidden');apps.innerHTML=x.apps.map(function(k){var a=APPS[k];return '<div class="card app"><div class="ico">'+a.icon+'</div><div class="grow"><div class="appname">'+a.name+'</div><div class="muted">'+a.desc+'</div><a class="btn" href="'+a.url+'">Acessar</a></div></div>'}).join('')}
 function logout(){sessionStorage.removeItem('lt_user');location.reload()}var current=sessionStorage.getItem('lt_user');if(current&&USERS[current])show(current);
