@@ -56,6 +56,19 @@ main{margin-left:96px!important;width:calc(100% - 96px)!important;max-width:none
 main>h2{font-size:21px;margin:20px 0 8px}.card{margin:8px 0!important;border-radius:14px!important}
 .order-workspace{grid-template-columns:170px minmax(0,1fr)!important}.order-workspace aside{width:170px!important;min-width:170px!important}
 }
+</style><style>
+/* Correção final de conflitos entre breakpoints de celular e tablet */
+@media (min-width:601px) and (max-width:1100px){
+#modal{position:relative!important;z-index:1000!important}
+#modal .modalbg{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:96px!important;width:auto!important;height:100dvh!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:18px!important;margin:0!important;z-index:1000!important;background:#07101da6!important;backdrop-filter:blur(4px)}
+#modal .modal{display:block!important;width:min(620px,calc(100vw - 132px))!important;max-width:620px!important;max-height:88dvh!important;margin:0!important;padding:20px!important;border-radius:18px!important;overflow:auto!important;background:#fff!important;box-shadow:0 24px 70px #0005!important}
+#modal .modal .row{grid-template-columns:1fr 1fr!important}
+#modal .modal .card{overflow-x:auto!important}
+.order-workspace{display:grid!important;grid-template-columns:170px minmax(0,1fr)!important;gap:12px!important}
+.order-workspace aside{width:170px!important;min-width:170px!important}
+.order-categories{display:grid!important;grid-template-columns:1fr!important;position:sticky!important;top:10px!important;max-height:520px!important;overflow-y:auto!important;overflow-x:hidden!important;padding:0!important}
+.order-categories .btn{width:100%!important;min-width:0!important;text-align:left!important}
+}
 </style></head><body>
 <header><div><div class="brand">MARCIO BEBIDAS</div><div class="sub">LT Soluções · Para seu empreendimento</div></div><div id="company"></div></header>
 <div class="layout"><nav id="nav"></nav><main id="main"></main></div><div id="modal"></div>
