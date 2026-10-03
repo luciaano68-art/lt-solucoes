@@ -1,0 +1,25 @@
+{
+  "id": "./lt-barbearia-demo",
+  "name": "Barbearia Demonstração · LT Soluções",
+  "short_name": "Barbearia Demo",
+  "start_url": "./?source=pwa-demo",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#11110f",
+  "theme_color": "#11110f",
+  "description": "Demonstração de agenda e gestão para barbearias — LT Soluções. Dados de teste separados.",
+  "icons": [
+    {
+      "src": "./icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
