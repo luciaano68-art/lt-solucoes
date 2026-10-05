@@ -1,10 +1,11 @@
+export function createEngine(initial){let value=JSON.stringify(initial),changed=false;const window={URL,localStorage:{getItem:()=>value,setItem:(k,v)=>{value=v;changed=true}},navigator:{}};
 /* LT Soluções: dados exclusivos da demonstração. Não usa servidores de clientes. */
 (function(root){
 'use strict';
 const dataKey='lt_demo_barbearia_data_v3',panelKey='lt_demo_barbearia_panel_v3';
 const baseURL='https://barbearia-demo.invalid';
 const copy=x=>JSON.parse(JSON.stringify(x));
-function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function today(){return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
 function week(){const w={};for(let i=0;i<7;i++)w[i]={active:i>0,open:'09:00',lunchStart:'12:00',lunchEnd:'13:30',close:i===6?'16:00':'18:00'};return w}
 function defaults(){return {version:3,nextId:1,bookings:[],series:[],hours:[{barber_id:1,weekly:week()},{barber_id:2,weekly:week()}],blocks:[],holidays:[],catalog:{business:{name:'Barbearia Demonstração',address:'',whatsapp:'',logo:''},services:[{id:1,name:'Corte',price:35,duration:30,active:true},{id:2,name:'Barba',price:25,duration:20,active:true},{id:3,name:'Corte + Barba',price:55,duration:50,active:true}],barbers:[{id:1,name:'Profissional 1',active:true,serviceIds:[1,2,3]},{id:2,name:'Profissional 2',active:true,serviceIds:[1,2,3]}]}}}
 function read(){let data;try{data=JSON.parse(root.localStorage.getItem(dataKey)||'null')}catch(e){}return data&&data.version===3?data:defaults()}
@@ -48,7 +49,11 @@ let queue=Promise.resolve();function demoFetch(input,options){const run=()=>{try
 function updateCatalog(db){const data=read();data.catalog={business:copy(db.business),services:copy(db.services),barbers:copy(db.barbers)};data.blocks=copy(db.blocks||[]);data.holidays=copy(db.holidays||[]);for(const b of db.barbers)if(!data.hours.some(h=>h.barber_id==b.id))data.hours.push({barber_id:b.id,weekly:copy(b.weekly||week())});write(data)}
 function populate(){const data=read(),s=document.getElementById('service'),b=document.getElementById('barber');if(!s||!b)return;function fill(){const sid=+s.value.split('|')[0];b.replaceChildren();for(const row of data.catalog.barbers.filter(b=>b.active&&(b.serviceIds||[]).includes(sid))){const option=document.createElement('option');option.value=row.id+'|'+row.name;option.textContent=row.name;b.appendChild(option)}}s.replaceChildren();for(const row of data.catalog.services.filter(s=>s.active)){const option=document.createElement('option');option.value=[row.id,row.name,row.price,row.duration].join('|');option.textContent=row.name+' · R$ '+Number(row.price).toFixed(2).replace('.',',')+' · '+row.duration+' min';s.appendChild(option)}fill();s.addEventListener('change',fill);const title=document.getElementById('demoBusinessName');if(title)title.textContent=data.catalog.business.name}
 function reset(){if(!root.confirm('Limpar somente os dados de teste desta demonstração neste navegador?'))return;for(const key of [dataKey,panelKey,panelKey+'_hours_online_v1',panelKey+'_catalog_pending_v1',panelKey+'_catalog_local_migrated_v1',panelKey+'_owned_catalog_pending_v2'])root.localStorage.removeItem(key);root.location.reload()}
-root.BarberDemo=Object.freeze({baseURL,panelKey,fetch:demoFetch,today,updateCatalog,populateBookingForm:populate,schedule:(bid,date,weekly)=>schedule(read(),bid,date,weekly),reset,getState:read,replaceState:write});
+root.BarberDemo=Object.freeze({baseURL,panelKey,fetch:demoFetch,today,updateCatalog,populateBookingForm:populate,schedule:(bid,date,weekly)=>schedule(read(),bid,date,weekly),reset,replaceState:write,getState:read,catalogForDemo,within,blocked});
 })(window);
 
+
+
+return {api:window.BarberDemo,get data(){return window.BarberDemo.getState()},get written(){return changed}};
+}
 
