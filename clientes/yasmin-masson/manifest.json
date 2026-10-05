@@ -1,0 +1,25 @@
+{
+  "id": "./yasmin-masson",
+  "name": "Yasmin Masson · Estética Especializada",
+  "short_name": "Yasmin Masson",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "description": "Agenda e gestão — Yasmin Masson, Estética Especializada.",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
