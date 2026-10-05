@@ -1,4 +1,5 @@
 import { createEngine } from './engine.js';
+import { pushAction, notifyNewBooking } from './push.ts';
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'content-type, apikey, authorization','Access-Control-Allow-Methods':'POST, OPTIONS'};
 const reply=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json','Cache-Control':'no-store'}});
 const endpoint=Deno.env.get('SUPABASE_URL')+'/rest/v1/lt_demo_barber_sessions_internal';
@@ -22,6 +23,7 @@ Deno.serve(async(req:Request)=>{
   for(let attempt=0;attempt<8;attempt++){
    const rows=await database('?id=eq.'+p.session+'&select=id,admin_hash,revision,data');const row=rows[0];if(!row)return reply({message:'Demonstração não encontrada. Peça um novo link pelo painel.'},404);
    const isAdmin=uuid.test(p.admin||'')&&await digest(p.admin)===row.admin_hash;
+   if(['pushPublicKey','pushSubscribe','pushTest'].includes(p.action)){if(!isAdmin)return reply({message:'Avisos restritos ao painel desta demonstração.'},403);return await pushAction(p,reply)}
    if(p.action==='state'){if(!isAdmin)return reply({message:'Acesso restrito ao painel desta demonstração.'},403);return reply({state:row.data})}
    const engine=createEngine(row.data);let result:Response;
    if(p.action==='config'){
@@ -62,7 +64,7 @@ Deno.serve(async(req:Request)=>{
    const body=await result.json();if(!result.ok)return reply(body,result.status);
    if(!engine.written)return reply(body,result.status);
    const updated=await database('?id=eq.'+p.session+'&revision=eq.'+row.revision,'PATCH',{revision:row.revision+1,data:engine.data});
-   if(updated.length)return reply(body,result.status);
+   if(updated.length){if(!isAdmin&&p.method==='POST'&&p.path.split('?')[0]==='/rest/v1/barbershop_public_bookings'&&Array.isArray(body)&&body[0])EdgeRuntime.waitUntil(notifyNewBooking(p.session,body[0]));return reply(body,result.status)}
   }
   return reply({message:'A agenda está sendo atualizada. Confira os horários e tente novamente.'},409);
  }catch(e){console.error(e);return reply({message:'Não foi possível sincronizar a demonstração. Confira sua conexão e tente novamente.'},503)}
