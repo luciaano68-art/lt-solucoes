@@ -14,7 +14,7 @@ import {summarize} from './ledger.js';
 import {parseMessage,normalize,moneyCents,categories,categoryOf,shiftDate} from './conversation.js';
 const endpoint='https://wwietlvweqsxfpejhhis.supabase.co/functions/v1/lt-meu-financeiro',publicKey='sb_publishable_dArUUh2qpDqbzvjxXAEbNQ_hT6Y0y5y';
 const authKey='lt_pf_luciano_yasmin_auth_v1',$=id=>document.getElementById(id);
-const appVersion='2026-10-06-v25';let appUpdating=false,workerRegistration=null;
+const appVersion='2026-10-06-v26';let appUpdating=false,workerRegistration=null;
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>(n/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo'}).format(new Date()),formatDate=s=>s?s.split('-').reverse().join('/'):'—';
 const announcedBudgets=new Set(),announcedEntries=new Set();
