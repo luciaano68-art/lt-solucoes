@@ -1317,6 +1317,44 @@ body:has(.carnes-system){background:#eef3f8}
 @media(max-width:900px){.quote-card-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.quote-card-meta{grid-template-columns:1fr 1fr}.quote-card-meta>div:last-child{grid-column:1/-1}.quote-card-actions{grid-template-columns:1fr}}
 
+
+/* TESSARO PDV PROTOTIPO — desktop management UI refresh */
+:root{--bg:#f1f4f8;--card:#fff;--text:#172033;--muted:#718096;--line:#e2e8f0;--primary:#1769e0;--primary2:#102a43;--accent:#18a957;--shadow:0 8px 30px rgba(15,34,58,.07)}
+body{background:var(--bg);color:var(--text)}
+.shell{grid-template-columns:272px minmax(0,1fr)}
+.sidebar{background:#101c2c;padding:18px 12px 14px;border-right:1px solid #1f3046;box-shadow:10px 0 35px rgba(15,28,44,.08)}
+.sidebar-brand{padding:8px 10px 22px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:8px}
+.sidebar .brand-tessaro{font-size:19px;letter-spacing:.07em}.sidebar .brand-cotacoes{color:#5ce39a;letter-spacing:.22em}
+.sidebar nav{gap:3px;overflow-y:auto;padding-right:3px}
+.sidebar nav button{min-height:43px;border-radius:9px;padding:10px 11px;color:#b9c7d8;background:transparent;border:1px solid transparent;text-align:left;font-size:13px;font-weight:750;transition:.15s}
+.sidebar nav button:hover{background:#17283d;color:#fff;border-color:#243a55;transform:none}
+.sidebar nav button.active{background:#1d65d8;color:#fff;border-color:#2e77e5;box-shadow:0 5px 14px rgba(23,105,224,.22)}
+.sidebar .nav-icon{display:inline-grid;place-items:center;width:24px;margin-right:7px;color:#8fa7c2}.sidebar nav button.active .nav-icon{color:#fff}
+.nav-section-title{font-size:9px;color:#6f849d;padding:15px 12px 5px;letter-spacing:.18em}
+.sidebar-profile{border-top:1px solid rgba(255,255,255,.08);padding-top:14px;margin-top:10px}
+.content{padding:28px 32px 50px;max-width:1700px;width:100%;margin:0 auto}
+.page-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+.page-head h1{font-size:25px;letter-spacing:-.025em;margin-bottom:5px}.page-head .muted{font-size:13px}
+.card{border:1px solid var(--line);border-radius:13px;box-shadow:0 2px 8px rgba(15,34,58,.035);background:#fff}
+.metric{padding:18px}.metric strong{font-size:24px;letter-spacing:-.03em}
+table{border-collapse:separate;border-spacing:0;width:100%;background:#fff;border:1px solid var(--line);border-radius:11px;overflow:hidden}
+th{background:#f7f9fc;color:#526174;font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:850}
+th,td{padding:11px 12px;border-bottom:1px solid #edf1f5}tr:last-child td{border-bottom:0}tbody tr:hover{background:#f9fbfd}
+.btn{border-radius:8px;min-height:38px;padding:9px 14px;box-shadow:none}.btn:hover{transform:none;filter:brightness(.98)}
+input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
+.quick-ops{gap:10px}.quick-op{border-radius:12px;box-shadow:none;border:1px solid var(--line);padding:17px}.quick-op:hover{border-color:#a9c7ef;background:#fbfdff}.quick-op strong{font-size:16px}
+.prototype-gateway{min-height:100vh;background:#eef2f7;display:grid;place-items:center;padding:32px}
+.prototype-gateway-shell{width:min(1080px,100%);display:grid;grid-template-columns:320px 1fr;background:#fff;border:1px solid #dde5ee;border-radius:20px;overflow:hidden;box-shadow:0 24px 70px rgba(22,38,61,.12)}
+.prototype-gateway-brand{background:#101c2c;color:#fff;padding:42px 34px;display:flex;flex-direction:column;justify-content:space-between;min-height:530px}
+.prototype-gateway-brand .tag{font-size:11px;letter-spacing:.18em;color:#72e3a5;font-weight:900}.prototype-gateway-brand h1{font-size:31px;line-height:1.05;margin:12px 0}.prototype-gateway-brand p{color:#9fb0c4;line-height:1.55}
+.prototype-gateway-main{padding:46px}.prototype-gateway-main>p{color:#718096;margin-bottom:24px}
+.prototype-entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.prototype-entry{min-height:270px;border:1px solid #dfe6ef;border-radius:14px;background:#fff;padding:25px;text-align:left;cursor:pointer;transition:.18s;display:flex;flex-direction:column}
+.prototype-entry:hover{transform:translateY(-2px);border-color:#9bbde9;box-shadow:0 12px 28px rgba(15,34,58,.08)}
+.prototype-entry .entry-icon{width:48px;height:48px;border-radius:11px;display:grid;place-items:center;background:#edf4ff;font-size:23px}.prototype-entry h2{font-size:21px;margin:18px 0 8px}.prototype-entry p{color:#718096;font-size:13px;line-height:1.55;flex:1}.prototype-entry strong{color:#1769e0;font-size:13px}
+.prototype-status{display:flex;align-items:center;gap:8px;font-size:12px;color:#9fb0c4}.prototype-status i{width:8px;height:8px;background:#34d17b;border-radius:50%;display:block}
+@media(max-width:900px){.prototype-gateway-shell{grid-template-columns:1fr}.prototype-gateway-brand{min-height:auto;padding:28px}.prototype-gateway-main{padding:28px}.prototype-entry-grid{grid-template-columns:1fr}.shell{grid-template-columns:1fr}.content{padding:20px 15px 80px}}
+
 </style>
 <style id="mobile-quote-ux-v30">
 @media (max-width:720px){
@@ -2588,25 +2626,35 @@ body:has(.carnes-system){background:#eef3f8}
   function prototypeAccessSelector(){
     applyTheme(null);
     root(`
-      <div style="min-height:100vh;background:#f3f6fb;display:grid;place-items:center;padding:24px">
-        <section style="width:min(900px,100%);background:#fff;border:1px solid #dfe6ef;border-radius:24px;padding:34px;box-shadow:0 18px 50px rgba(18,38,63,.10)">
-          <div style="text-align:center;margin-bottom:28px">
-            <div style="font-size:12px;font-weight:900;letter-spacing:.14em;color:#59718f">TESSARO</div>
-            <h1 style="margin:5px 0 8px">PDV PROTOTIPO</h1>
-            <p class="muted" style="margin:0">Selecione como deseja entrar no sistema.</p>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px">
-            <button id="enterOperation" style="border:1px solid #d8e2ef;background:#fff;border-radius:20px;padding:32px;text-align:left;cursor:pointer;box-shadow:0 8px 24px rgba(18,38,63,.07)">
-              <div style="font-size:42px">🧾</div><h2 style="font-size:26px;margin:14px 0 8px">PDV / Operação</h2>
-              <p class="muted">Vendas, mesas, balcão, caixa, Delivery, Clientes Fixos e Fiados.</p>
-              <strong>Entrar no PDV →</strong>
-            </button>
-            <button id="enterManagement" style="border:1px solid #d8e2ef;background:#fff;border-radius:20px;padding:32px;text-align:left;cursor:pointer;box-shadow:0 8px 24px rgba(18,38,63,.07)">
-              <div style="font-size:42px">📊</div><h2 style="font-size:26px;margin:14px 0 8px">Gestão</h2>
-              <p class="muted">Financeiro, Compras, Cotações, Recebimentos, Estoque, Carnes, Relatórios e Configurações.</p>
-              <strong>Entrar na Gestão →</strong>
-            </button>
-          </div>
+      <div class="prototype-gateway">
+        <section class="prototype-gateway-shell">
+          <aside class="prototype-gateway-brand">
+            <div>
+              <div class="tag">TESSARO SISTEMAS</div>
+              <h1>PDV<br>PROTOTIPO</h1>
+              <p>Ambiente integrado de operação e gestão do Tessaro Restaurante.</p>
+            </div>
+            <div class="prototype-status"><i></i><span>Sistema disponível</span></div>
+          </aside>
+          <main class="prototype-gateway-main">
+            <div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:#8391a4;margin-bottom:8px">ACESSO AO SISTEMA</div>
+            <h1 style="font-size:28px;margin-bottom:8px">Onde você deseja entrar?</h1>
+            <p>Escolha o ambiente de trabalho. Você poderá trocar de área a qualquer momento.</p>
+            <div class="prototype-entry-grid">
+              <button id="enterOperation" class="prototype-entry">
+                <div class="entry-icon">▣</div>
+                <h2>PDV / Operação</h2>
+                <p>Venda rápida, mesas, balcão e caixa. Acesso também ao Delivery, Clientes Fixos e Fiados.</p>
+                <strong>ENTRAR NO PDV →</strong>
+              </button>
+              <button id="enterManagement" class="prototype-entry">
+                <div class="entry-icon">▥</div>
+                <h2>Gestão</h2>
+                <p>Financeiro, compras e cotações, recebimentos, estoque, carnes, relatórios e configurações.</p>
+                <strong>ENTRAR NA GESTÃO →</strong>
+              </button>
+            </div>
+          </main>
         </section>
       </div>`);
     document.querySelector('#enterOperation').onclick=()=>{sessionStorage.setItem('tessaro_prototype_area','operation');pdvPage();};
