@@ -1641,7 +1641,18 @@ body:has(.carnes-system){background:#eef3f8}
 
   async function saveRemoteNow(){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
-    return { updated_at:new Date().toISOString() };
+    const payload={
+      id:'main',
+      data:db,
+      updated_at:new Date().toISOString()
+    };
+    const {data,error}=await supabaseClient
+      .from('platform_state')
+      .upsert(payload,{onConflict:'id'})
+      .select('updated_at')
+      .single();
+    if(error) throw error;
+    return data;
   }
 
 
@@ -9263,7 +9274,7 @@ body:has(.carnes-system){background:#eef3f8}
   }
 
   // TESSARO_FIADOS_COMPROVANTES_V3_RAPIDO_ANEXO_20260831
-  const FIADO_RECEIPT_ENDPOINT='https://cnppqwsujzrsabstmxhr.supabase.co/functions/v1/fiado-comprovantes';
+  const FIADO_RECEIPT_ENDPOINT='https://wwietlvweqsxfpejhhis.supabase.co/functions/v1/fiado-comprovantes';
   function fiadoReceiptList(){return Array.isArray(db.fiados?.receiptImages)?db.fiados.receiptImages:[]}
   function fiadoReceiptsForOrder(orderNo){const n=String(orderNo||'');return fiadoReceiptList().filter(x=>x?.status==='attached'&&String(x?.orderNumber||'')===n)}
   function fiadoReceiptHtml(orderNo){const items=fiadoReceiptsForOrder(orderNo);if(!items.length)return '';return `<div style="margin:0 0 12px;padding:12px;border:1px solid #b7dfc5;background:#f1fbf5;border-radius:12px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><strong>📎 ${items.length} comprovante${items.length>1?'s':''} anexado${items.length>1?'s':''}</strong><span class="muted">Pedido #${esc(orderNo||'-')}</span></div>${items.map(x=>`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:9px"><button class="btn secondary" data-fiado-receipt-view="${esc(x.id)}">Ver imagem</button><button class="btn secondary" data-fiado-receipt-edit="${esc(x.id)}" data-current-order="${esc(x.orderNumber||'')}">Editar vínculo</button><button class="btn danger" data-fiado-receipt-delete="${esc(x.id)}">Excluir imagem</button><span class="muted">${x.createdAt?new Date(x.createdAt).toLocaleString('pt-BR'):''}</span></div>`).join('')}</div>`}
