@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Tessaro Gestão — LT Soluções</title>
+  <title>TESSARO PDV PROTOTIPO — LT Soluções</title>
   <meta name="theme-color" content="#061f49">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Tessaro Gestão">
+  <meta name="apple-mobile-web-app-title" content="Tessaro PDV">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./tessaro-app-icon.svg" type="image/svg+xml">
   <style>
@@ -2385,6 +2385,11 @@ body:has(.carnes-system){background:#eef3f8}
                 <button data-page="repProfile" class="${active==='repProfile'?'active':''}"><i class="nav-icon">⚙</i>Meu perfil</button>
               ` : `
                 <button data-page="dashboard" class="${active==='dashboard'?'active':''}"><i class="nav-icon">⌂</i>Início</button>
+                <button data-page="pdv" class="${active==='pdv'?'active':''}"><i class="nav-icon">▣</i>PDV</button>
+                <button data-page="delivery" class="${active==='delivery'?'active':''}"><i class="nav-icon">☏</i>Delivery</button>
+                <button data-page="estoque" class="${active==='estoque'?'active':''}"><i class="nav-icon">▦</i>Estoque</button>
+                <button data-page="recebimentos" class="${active==='recebimentos'?'active':''}"><i class="nav-icon">✓</i>Recebimentos</button>
+                <button data-page="relatorios" class="${active==='relatorios'?'active':''}"><i class="nav-icon">▤</i>Relatórios</button>
                 <button data-page="fiados" class="${active==='fiados'?'active':''}"><i class="nav-icon">$</i>Fiados</button><button data-page="pedidosFixos" class="${active==='pedidosFixos'?'active':''}"><i class="nav-icon">✓</i>Pedidos Fixos</button>
                 <!-- TESSARO_FIADOS_SEM_FOTOS_V1_20260912: menu de comprovantes removido -->
                 <!-- TESSARO_CARNES_ABERTURA_V23_20260901 --><button data-page="carnes" class="${active==='carnes'?'active':''}"><i class="nav-icon">♨</i>Carnes</button>
@@ -2460,10 +2465,90 @@ body:has(.carnes-system){background:#eef3f8}
     if(backToPurchasesHub) backToPurchasesHub.onclick=()=>navigate('purchasesHub');
   }
 
+
+  // TESSARO_PDV_PROTOTIPO_GESTAO_V1_20261006
+  function tessaroGestaoInit(){
+    if(!db.gestao) db.gestao={};
+    const g=db.gestao;
+    if(!Array.isArray(g.orders)) g.orders=[];
+    if(!Array.isArray(g.stock)) g.stock=[];
+    if(!Array.isArray(g.receipts)) g.receipts=[];
+    if(!Array.isArray(g.fixedCustomers)) g.fixedCustomers=[];
+    if(!Array.isArray(g.accounts)) g.accounts=[
+      {id:'caixa',name:'Caixa físico',balance:0},{id:'sicredi',name:'Sicredi',balance:0}
+    ];
+    if(!Array.isArray(g.payables)) g.payables=[];
+    if(!Array.isArray(g.receivables)) g.receivables=[];
+    if(typeof g.printPaused!=='boolean') g.printPaused=false;
+    if(!g.cash) g.cash={open:false,openedAt:null,openingAmount:0};
+    return g;
+  }
+  function pdvPage(){
+    const g=tessaroGestaoInit();
+    layout(`
+      <div class="page-head"><div><h1>PDV</h1><p class="muted">Mesa, Balcão, Caixa e Delivery em uma única operação.</p></div></div>
+      <section class="grid metrics">
+        <div class="card metric blue"><div class="metric-icon">▣</div><span>Caixa diário</span><strong>${g.cash.open?'ABERTO':'FECHADO'}</strong><small>${g.cash.open?'Aberto em '+new Date(g.cash.openedAt).toLocaleString('pt-BR'):'Abra o caixa para iniciar as vendas'}</small></div>
+        <div class="card metric green"><div class="metric-icon">$</div><span>Fundo de caixa</span><strong>${money(g.cash.openingAmount)}</strong><small>valor informado na abertura</small></div>
+        <div class="card metric purple"><div class="metric-icon">☷</div><span>Pedidos hoje</span><strong>${g.orders.filter(o=>String(o.createdAt||'').slice(0,10)===todayISO()).length}</strong><small>todos os canais</small></div>
+        <div class="card metric teal"><div class="metric-icon">▥</div><span>Impressão</span><strong>${g.printPaused?'PAUSADA':'ATIVA'}</strong><small>controle operacional</small></div>
+      </section>
+      <section class="card">
+        <h2>Abertura e fechamento</h2>
+        <div class="actions">
+          ${g.cash.open?'<button class="btn danger" id="closeCash">Fechar caixa</button>':'<button class="btn success" id="openCash">Abrir caixa</button>'}
+          <button class="btn secondary" id="togglePrint">${g.printPaused?'Retomar impressão':'Pausar impressão'}</button>
+        </div>
+      </section>
+      <section class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+        ${[['Mesa','🍽️'],['Balcão','🛍️'],['Caixa','🧾'],['Delivery','🛵']].map(x=>`<button class="card pdv-channel" data-channel="${x[0]}" style="cursor:pointer;text-align:left"><h2>${x[1]} ${x[0]}</h2><p class="muted">Abrir novo pedido de ${x[0].toLowerCase()}.</p><strong>Novo pedido →</strong></button>`).join('')}
+      </section>
+      <section class="card"><h2>Leitor de código de barras</h2><p class="muted">Campo preparado para leitor USB/Bluetooth que funciona como teclado.</p><input id="barcodeInput" placeholder="Leia ou digite o código de barras e pressione Enter" autocomplete="off"></section>
+    `,'pdv');
+    document.querySelector('#openCash')?.addEventListener('click',()=>{const v=prompt('Valor inicial/troco do caixa:','0');if(v===null)return;g.cash={open:true,openedAt:new Date().toISOString(),openingAmount:Number(String(v).replace(',','.'))||0};save();pdvPage()});
+    document.querySelector('#closeCash')?.addEventListener('click',()=>{const counted=prompt('Quanto dinheiro foi contado no caixa?','0');if(counted===null)return;alert('Fechamento registrado. Contado: '+money(Number(String(counted).replace(',','.'))||0));g.cash={open:false,openedAt:null,openingAmount:0};save();pdvPage()});
+    document.querySelector('#togglePrint').onclick=()=>{g.printPaused=!g.printPaused;save();pdvPage()};
+    document.querySelectorAll('.pdv-channel').forEach(b=>b.onclick=()=>alert('Fluxo '+b.dataset.channel+' preparado. Na próxima etapa entra a tela de lançamento de itens, adicionais e pagamento.'));
+    document.querySelector('#barcodeInput').onkeydown=e=>{if(e.key==='Enter'){alert('Código lido: '+e.target.value+' — pronto para vincular ao cadastro de produtos.');e.target.value=''}};
+  }
+  function deliveryPage(){
+    const g=tessaroGestaoInit();
+    const orders=g.orders.filter(o=>o.channel==='Delivery'||o.fixedCustomer);
+    layout(`
+      <div class="page-head"><div><h1>Delivery</h1><p class="muted">Pedidos do app/chat, clientes fixos e acompanhamento da produção.</p></div><button class="btn ${g.printPaused?'warn':'success'}" id="deliveryPrint">${g.printPaused?'Impressão pausada':'Impressão ativa'}</button></div>
+      <section class="card"><h2>Fluxo do cliente</h2><p class="muted">Conversa guiada: produtos → adicionais → entrega/retirada → endereço → pagamento → confirmação → aceite do Tessaro.</p><div class="actions"><span class="badge active">Recebido</span><span class="badge pending">Aceito</span><span class="badge pending">Em preparo</span><span class="badge pending">Saiu/Retirado</span><span class="badge blocked">Entregue</span></div></section>
+      <section class="card"><h2>Pedidos recebidos</h2>${orders.length?orders.map(o=>`<div class="card"><strong>${esc(o.customer||'Cliente')}</strong> · ${esc(o.status||'Recebido')}<br><span class="muted">${new Date(o.createdAt).toLocaleString('pt-BR')}</span></div>`).join(''):'<div class="empty">Nenhum pedido de delivery ainda.</div>'}</section>
+      <section class="card"><h2>Clientes fixos</h2><p class="muted">O módulo Pedidos Fixos existente será integrado aqui: ao gerar/retirar, entra no Delivery e imprime automaticamente; se estiver pausado, não emite.</p><button class="btn primary" data-page="pedidosFixos">Abrir Pedidos Fixos</button></section>
+    `,'delivery');
+    document.querySelector('#deliveryPrint').onclick=()=>{g.printPaused=!g.printPaused;save();deliveryPage()};
+    document.querySelector('[data-page="pedidosFixos"]').onclick=()=>navigate('pedidosFixos');
+  }
+  function estoquePage(){
+    const g=tessaroGestaoInit();
+    layout(`<div class="page-head"><div><h1>Estoque</h1><p class="muted">Controle de produtos e insumos recebidos.</p></div><button class="btn primary" id="newStock">Adicionar item</button></div>
+      <section class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Item</th><th>Quantidade</th><th>Unidade</th><th>Custo</th></tr></thead><tbody>${g.stock.map(i=>`<tr><td><strong>${esc(i.name)}</strong></td><td>${i.qty}</td><td>${esc(i.unit||'UN')}</td><td>${money(i.cost)}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">Estoque vazio. Os recebimentos conferidos poderão alimentar esta tela.</td></tr>'}</tbody></table></div></section>`,'estoque');
+    document.querySelector('#newStock').onclick=()=>{const name=prompt('Nome do item');if(!name)return;const qty=Number(prompt('Quantidade','1')||0);g.stock.push({id:uid('stk'),name,qty,unit:'UN',cost:0});save();estoquePage()};
+  }
+  function recebimentosPage(){
+    const g=tessaroGestaoInit();
+    layout(`<div class="page-head"><div><h1>Recebimento de compras</h1><p class="muted">O pedido permanece em aberto até a mercadoria chegar e ser conferida.</p></div></div>
+      <section class="card"><h2>Fluxo definido</h2><p><strong>Cotação → Pedido enviado → Em aberto → Mercadoria chegou → Conferência → Estoque + Contas a Pagar.</strong></p><p class="muted">Na conferência serão corrigidos quantidade, preço da nota, faltas, substituições, descontos e frete. Depois serão informados boletos/parcelas e vencimentos.</p></section>
+      <section class="card"><h2>Avarias e créditos</h2><p class="muted">Mercadoria avariada gera crédito pendente do fornecedor. Em compras futuras o sistema lembrará de conferir se o crédito foi abatido.</p><div class="notice info">Regra: estoque e contas a pagar só são gerados depois da conferência do recebimento.</div></section>
+      <button class="btn primary" data-page="purchasesHub">Abrir Pesquisa de preços / Cotações</button>`,'recebimentos');
+    document.querySelector('[data-page="purchasesHub"]').onclick=()=>navigate('purchasesHub');
+  }
+  function relatoriosPage(){
+    layout(`<div class="page-head"><div><h1>Relatórios</h1><p class="muted">Relatórios prontos e futuro assistente em formato de chat.</p></div></div>
+      <section class="card"><h2>💬 Peça um relatório</h2><div id="reportChat" class="notice info">Ex.: “Faça o fechamento de ontem” ou “Compare o faturamento do almoço com o custo de carnes deste mês”.</div><textarea id="reportPrompt" placeholder="Digite o relatório que deseja..."></textarea><div class="actions" style="margin-top:10px"><button class="btn primary" id="askReport">Solicitar relatório</button><button class="btn secondary" id="pdfReport">Gerar PDF</button></div><p class="muted" style="margin-top:10px">A interpretação livre por IA e o PDF automático serão conectados depois. Os dados operacionais continuarão funcionando sem depender da IA.</p></section>
+      <section class="grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px">${['Caixa diário','Vendas','Financeiro','Estoque','Carnes','Delivery','Compras / Fornecedores'].map(r=>`<div class="card"><strong>${r}</strong><p class="muted">Relatório padrão</p></div>`).join('')}</section>`,'relatorios');
+    document.querySelector('#askReport').onclick=()=>{const q=document.querySelector('#reportPrompt').value.trim();if(!q)return;document.querySelector('#reportChat').innerHTML='<strong>Solicitação registrada:</strong><br>'+esc(q)+'<br><br><span class="muted">O conector inteligente será ativado em etapa posterior.</span>'};
+    document.querySelector('#pdfReport').onclick=()=>window.print();
+  }
+
   function navigate(page){
     const routes = {
       masterDashboard, companiesPage, masterRepresentativesPage, accessCodesPage, settingsPage,
-      dashboardPage, fiadosPage, pedidosFixosPage, carnesPage, financeiroPage, purchasesHubPage, categoriesPage, unitsPage, productsPage, suppliersPage,
+      dashboardPage, pdvPage, deliveryPage, estoquePage, recebimentosPage, relatoriosPage, fiadosPage, pedidosFixosPage, carnesPage, financeiroPage, purchasesHubPage, categoriesPage, unitsPage, productsPage, suppliersPage,
       quotationsPage, ordersPage, historyPage, companySettingsPage,
       repDashboardPage, repQuotationsPage, repOrdersPage,
       repClientsPage, repVisitsPage, repPaymentConditionsPage, repProfilePage
@@ -2476,6 +2561,11 @@ body:has(.carnes-system){background:#eef3f8}
       accessCodes:'accessCodesPage',
       settings:'settingsPage',
       dashboard:'dashboardPage',
+      pdv:'pdvPage',
+      delivery:'deliveryPage',
+      estoque:'estoquePage',
+      recebimentos:'recebimentosPage',
+      relatorios:'relatoriosPage',
       fiados:'fiadosPage', pedidosFixos:'pedidosFixosPage',
       carnes:'carnesPage',
       financeiro:'financeiroPage',
@@ -3752,8 +3842,8 @@ body:has(.carnes-system){background:#eef3f8}
     layout(`
       <div class="page-head">
         <div>
-          <h1>Tessaro Gestão</h1>
-          <p class="muted">Visão geral do restaurante. Cada módulo mantém seus próprios controles e relatórios.</p>
+          <h1>TESSARO PDV PROTOTIPO</h1>
+          <p class="muted">Central de gestão do restaurante: operação, financeiro, compras, estoque, carnes, clientes e relatórios.</p>
         </div>
       </div>
 
@@ -3765,6 +3855,11 @@ body:has(.carnes-system){background:#eef3f8}
       </section>
 
       <section class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
+        <button class="card" data-page="pdv" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><h2 style="margin-top:0">🧾 PDV</h2><p class="muted">Mesa, Balcão, Caixa, abertura/fechamento e código de barras.</p><strong>Abrir PDV →</strong></button>
+        <button class="card" data-page="delivery" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><h2 style="margin-top:0">🛵 Delivery</h2><p class="muted">Pedidos do chat/app, aceite, produção e clientes fixos.</p><strong>Abrir Delivery →</strong></button>
+        <button class="card" data-page="estoque" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><h2 style="margin-top:0">📦 Estoque</h2><p class="muted">Produtos e insumos integrados aos recebimentos.</p><strong>Abrir Estoque →</strong></button>
+        <button class="card" data-page="recebimentos" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><h2 style="margin-top:0">✅ Recebimentos</h2><p class="muted">Conferência de compras, boletos, avarias e créditos.</p><strong>Abrir Recebimentos →</strong></button>
+        <button class="card" data-page="relatorios" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><h2 style="margin-top:0">📊 Relatórios</h2><p class="muted">Relatórios operacionais, chat e geração de PDF.</p><strong>Abrir Relatórios →</strong></button>
         <button class="card" data-page="fiados" style="text-align:left;cursor:pointer;border:1px solid var(--line)">
           <h2 style="margin-top:0">💳 Fiados</h2>
           <p class="muted">Importação do Consumer, faturas enviadas, recebimentos e contas dos clientes.</p>
