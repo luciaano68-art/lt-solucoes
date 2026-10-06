@@ -1,8 +1,9 @@
 import {mutate} from './ledger.js';
+import {chatRows,chatQuery,chatPage} from './chat.js';
 const base=Deno.env.get('SUPABASE_URL')+'/rest/v1/',secret=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const heads={apikey:secret,Authorization:'Bearer '+secret,'Content-Type':'application/json',Prefer:'return=representation'};
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type','Access-Control-Allow-Methods':'POST,OPTIONS','Cache-Control':'no-store','Content-Type':'application/json'};
-async function db(table:string,q:string,method='GET',body?:unknown){const r=await fetch(base+table+q,{method,headers:heads,body:body===undefined?undefined:JSON.stringify(body)});if(!r.ok)throw Object.assign(Error('Não foi possível salvar no servidor. Tente novamente.'),{status:503});return r.json()}
+async function db(table:string,q:string,method='GET',body?:unknown,prefer?:string){const r=await fetch(base+table+q,{method,headers:prefer?{...heads,Prefer:prefer}:heads,body:body===undefined?undefined:JSON.stringify(body)});if(!r.ok)throw Object.assign(Error('Não foi possível salvar no servidor. Tente novamente.'),{status:503});return r.json()}
 const reply=(v:any,s=200)=>new Response(JSON.stringify(v),{status:s,headers:cors});
 const hex=(a:ArrayBuffer)=>Array.from(new Uint8Array(a)).map(n=>n.toString(16).padStart(2,'0')).join('');
 async function hash(s:string){return hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))}
@@ -12,7 +13,7 @@ async function identity(req:Request){const token=(req.headers.get('Authorization
 Deno.serve(async(req:Request)=>{
  if(req.method==='OPTIONS')return new Response('ok',{headers:cors});if(req.method!=='POST')return reply({message:'Método inválido.'},405);
  try{
-  const raw=await req.text();if(raw.length>15000)return reply({message:'Solicitação muito grande.'},413);let p;try{p=JSON.parse(raw)}catch{return reply({message:'Solicitação inválida.'},400)}
+  const raw=await req.text();if(raw.length>60000)return reply({message:'Solicitação muito grande.'},413);let p;try{p=JSON.parse(raw)}catch{return reply({message:'Solicitação inválida.'},400)}
   if(p.action==='login'){
    const username=String(p.username||'').trim().toLowerCase(),password=String(p.password||'');if(username.length>100||password.length>200||!password)return reply({message:'Login ou senha incorretos.'},401);
    const rows=await db('lt_pf_users_internal','?username=eq.'+encodeURIComponent(username)+'&active=eq.true'),a=rows[0];if(!a){await passwordHash(password,'unknown');return reply({message:'Login ou senha incorretos.'},401)}
@@ -25,6 +26,8 @@ Deno.serve(async(req:Request)=>{
   }
   const user=await identity(req);
   if(p.spaceId&&p.spaceId!==user.space)return reply({message:'Você não tem acesso a este financeiro.'},403);
+  if(p.action==='chatState')return reply(chatPage(await db('lt_pf_chat_internal',chatQuery(user,p.before))));
+  if(p.action==='chatAppend'){await db('lt_pf_chat_internal','?on_conflict=user_id,message_id','POST',chatRows(p.messages,user),'resolution=ignore-duplicates,return=representation');return reply({ok:true})}
   if(p.action==='logout'){await db('lt_pf_tokens_internal','?token_hash=eq.'+user.digest,'DELETE');return reply({ok:true})}
   if(p.action==='state'){const spaces=await db('lt_pf_spaces_internal','?id=eq.'+user.space);if(!spaces.length)return reply({message:'Financeiro indisponível.'},404);const people=await db('lt_pf_users_internal','?space_id=eq.'+user.space+'&active=eq.true&select=id,display_name');return reply({space:{id:user.space,name:spaces[0].name},revision:spaces[0].revision,data:spaces[0].data,user:{id:user.id,name:user.name},people})}
   for(let retry=0;retry<6;retry++){
