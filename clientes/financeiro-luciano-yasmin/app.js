@@ -1,4 +1,5 @@
 import {ChatSync} from './chat-sync.js';
+import {updateApplication} from './app-update.js';
 import {descriptionSpendingReply} from './description-query.js';
 import {duePendingEntries,entryReminderKey} from './due-reminders.js';
 import {accountBalanceReply} from './account-query.js';
@@ -10,6 +11,7 @@ import {summarize} from './ledger.js';
 import {parseMessage,normalize,moneyCents,categories,categoryOf,shiftDate} from './conversation.js';
 const endpoint='https://wwietlvweqsxfpejhhis.supabase.co/functions/v1/lt-meu-financeiro',publicKey='sb_publishable_dArUUh2qpDqbzvjxXAEbNQ_hT6Y0y5y';
 const authKey='lt_pf_luciano_yasmin_auth_v1',$=id=>document.getElementById(id);
+const appVersion='2026-10-06-v19';let appUpdating=false,workerRegistration=null;
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>(n/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo'}).format(new Date()),formatDate=s=>s?s.split('-').reverse().join('/'):'—';
 const announcedBudgets=new Set(),announcedEntries=new Set();
@@ -36,6 +38,7 @@ async function connectChat(){
  chatSync?.stop();const owner=user.id,token=auth.token;
  const sync=new ChatSync(owner,{storage:localStorage,request:body=>api(body,token),onChange:changed=>{if(chatSync!==sync||user?.id!==owner||auth?.token!==token)return;messages=sync.messages;updateChatSyncLabel();if(changed&&sync.ready){if(!loadingOlder)chatNeedsScroll=true;render();}}});
  chatSync=sync;messages=[];await sync.initialize();if(chatSync!==sync)return;messages=sync.messages;
+ try{const key='lt_pf_resume_'+owner,resume=JSON.parse(sessionStorage.getItem(key)||'null');sessionStorage.removeItem(key);if(resume){if(resume.tab&&['chat','summary','entries','cards','accounts','budgets'].includes(resume.tab))tab=resume.tab;if(resume.dueId&&state.entries.some(e=>e.id===resume.dueId&&!e.deleted&&!e.cardId&&e.status==='pending'))dueFlow={id:resume.dueId,stage:'question'};render();if($('chatText')&&typeof resume.text==='string'){$('chatText').value=resume.text.slice(0,700);}}}catch{}
 }
 async function refresh(renderView=true){if(!auth)return;if(refreshing)return refreshing;const opening=$('shell').hidden,token=auth.token;refreshing=(async()=>{try{const result=await api({action:'state'},token);if(auth?.token!==token)return;const previous=JSON.stringify(state);state=result.data;user=result.user;if((state.cards||[]).some(c=>!(state.invoices||[]).some(b=>b.id===invoiceId(c.id,purchaseCycle(today(),c,state.invoices||[]))))){const prepared=await api({action:'ensureInvoices'},token);if(auth?.token!==token)return;state=prepared.data;}$('who').textContent=user.name;$('shell').hidden=false;$('loginScreen').hidden=true;connection('Financeiro compartilhado · Conversa individual');await connectChat();if(auth?.token!==token)return;if(!messages.length)addMessage('bot','Olá, '+user.name+'! Conte uma receita ou despesa. Vou pedir o que faltar e você confirma antes de salvar.');announceInvoices();const entryReminderAdded=announceEntryReminders();if(opening&&tab==='chat')chatNeedsScroll=true;if(entryReminderAdded||opening||renderView||previous!==JSON.stringify(state))render()}catch(e){connection(e.message,true);if($('shell').hidden)$('loginError').textContent=e.message;throw e}finally{refreshing=null}})();return refreshing}
 function addMessage(role,text){chatNeedsScroll=true;if(chatSync?.owner===user?.id&&chatSync.active){chatSync.add(role,text);messages=chatSync.messages;}else{messages.push({role,text,time:new Date().toISOString()});if(user)try{localStorage.setItem(chatKey(),JSON.stringify(messages))}catch{}}}
@@ -44,7 +47,14 @@ function scopeLabel(scope){return {casal:'Do casal',luciano:'Luciano',yasmin:'Ya
 function entryAmount(e){return '<span class="amount '+(e.kind==='expense'?'red':'green')+'">'+(e.kind==='expense'?'−':'+')+money(e.cents)+'</span>'}
 function go(next){tab=next;if(next==='chat')chatNeedsScroll=true;else window.scrollTo({top:0,behavior:'auto'});render()}
 // Scroll the message itself: the sticky composer can already be visible while replies are off-screen.
-function fitChatViewport(){const viewport=window.visualViewport;if(document.documentElement?.style)document.documentElement.style.setProperty('--app-height',(viewport?.height||window.innerHeight)+'px');if(document.documentElement?.style)document.documentElement.style.setProperty('--app-top',(viewport?.offsetTop||0)+'px');}
+let chatViewportBaseline=window.innerHeight;
+function fitChatViewport(){
+ const viewport=window.visualViewport,height=viewport?.height||window.innerHeight,focused=document.activeElement?.id==='chatText';
+ if(!focused&&height>=window.innerHeight-80)chatViewportBaseline=window.innerHeight;
+ const keyboard=tab==='chat'&&(height<window.innerHeight-100||(focused&&height<chatViewportBaseline*.78));
+ document.body?.classList.toggle('chat-keyboard',keyboard);
+ if(document.documentElement?.style){document.documentElement.style.setProperty('--app-height',height+'px');document.documentElement.style.setProperty('--app-top',(viewport?.offsetTop||0)+'px');}
+}
 function scrollChatLatest(){
  if(tab!=='chat')return;fitChatViewport();
  const stream=document.querySelector('.chat-stream');
@@ -109,13 +119,18 @@ $('accountForm').onsubmit=async event=>{event.preventDefault();if(busy)return;co
 $('entryStatus').onchange=updatePaidField;$('closeEditor').onclick=()=>{if(!busy)$('editor').close()};$('closeAccount').onclick=()=>{if(!busy)$('accountEditor').close()};
 for(const dialog of [$('editor'),$('accountEditor')])dialog.addEventListener('cancel',e=>{if(busy)e.preventDefault()});
 $('loginForm').onsubmit=async event=>{event.preventDefault();$('loginButton').disabled=true;$('loginError').textContent='';try{const result=await api({action:'login',username:$('username').value,password:$('password').value});localStorage.setItem(authKey,JSON.stringify(result));auth=result;$('password').value='';await refresh()}catch(e){$('loginError').textContent=e.message}finally{$('loginButton').disabled=false}};
-$('refresh').onclick=()=>refresh().catch(()=>{});$('logout').onclick=async()=>{if(!confirm('Sair deste aparelho?'))return;const current=auth;try{await api({action:'logout'})}catch{}localStorage.removeItem(authKey);chatSync?.stop();chatSync=null;document.body?.classList.remove('chat-mode');auth=null;user=null;state={accounts:[],entries:[]};messages=[];chatToolsOpen=false;draft=null;dueFlow=null;lastDescriptionSubject=null;creditFlow=null;creditSelectedBill=null;limitLookupPending=false;accountLookupPending=false;$('shell').hidden=true;$('loginScreen').hidden=false;$('loginError').textContent='';};
+async function updateInstalledApp(){
+ if(appUpdating)return;if(busy||chatSending){toast('Aguarde a operação terminar para atualizar.');return;}
+ const owner=user?.id,token=auth?.token;appUpdating=true;$('refresh').disabled=true;$('refresh').classList.add('updating');
+ try{await updateApplication({currentVersion:appVersion,refreshData:()=>refresh(),updateWorker:async()=>{if(workerRegistration)await workerRegistration.update();},fetchVersion:async()=>{const r=await fetch('./app-version.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error('Não foi possível conferir a atualização. Confira sua internet.');return r.json();},hasUnsaved:()=>!!(busy||chatSending||draft||creditFlow||dueFlow?.stage==='confirm'||$('editor').open||$('accountEditor').open||$('cardEditor').open),flushChat:async()=>{await chatSync?.flush();if(chatSync?.pending.size)throw Error('A conversa ainda não sincronizou. Confira a internet e tente atualizar novamente.');},saveResume:()=>{const text=$('chatText')?.value||'';try{sessionStorage.setItem('lt_pf_resume_'+owner,JSON.stringify({text,tab,dueId:dueFlow?.stage==='question'?dueFlow.id:null}));}catch{if(text)throw Error('Copie a mensagem digitada antes de atualizar, para não perdê-la.');}},reload:()=>window.location.reload(),notify:toast,isCurrent:()=>user?.id===owner&&auth?.token===token});}catch(e){toast(e.message||'Não foi possível atualizar. Tente novamente.');}finally{appUpdating=false;$('refresh').disabled=false;$('refresh').classList.remove('updating');}
+}
+$('refresh').onclick=updateInstalledApp;$('logout').onclick=async()=>{if(!confirm('Sair deste aparelho?'))return;const current=auth;try{await api({action:'logout'})}catch{}localStorage.removeItem(authKey);chatSync?.stop();chatSync=null;document.body?.classList.remove('chat-mode');auth=null;user=null;state={accounts:[],entries:[]};messages=[];chatToolsOpen=false;draft=null;dueFlow=null;lastDescriptionSubject=null;creditFlow=null;creditSelectedBill=null;limitLookupPending=false;accountLookupPending=false;$('shell').hidden=true;$('loginScreen').hidden=false;$('loginError').textContent='';};
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>go(b.dataset.tab));
 let installPrompt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e});async function installApp(){if(installPrompt){await installPrompt.prompt();installPrompt=null}else alert('No iPhone: abra no Safari, toque em Compartilhar e “Adicionar à Tela de Início”. No Android: use o menu do navegador e “Instalar app” ou “Adicionar à tela inicial”. Faça login uma vez no aplicativo instalado.');}
 function resumeChat(){if(auth&&tab==='chat'){chatNeedsScroll=true;if(user)scheduleChatScroll()}}
-window.addEventListener('pageshow',resumeChat);window.visualViewport?.addEventListener('resize',()=>{fitChatViewport();if(tab==='chat')scheduleChatScroll()});window.addEventListener('resize',()=>{fitChatViewport();if(tab==='chat')scheduleChatScroll()});setInterval(()=>{if(auth&&!document.hidden&&chatSync){chatSync.flush();chatSync.pull();}},5000);
+window.addEventListener('pageshow',resumeChat);window.visualViewport?.addEventListener('resize',()=>{fitChatViewport();if(tab==='chat')scheduleChatScroll()});window.visualViewport?.addEventListener('scroll',()=>{fitChatViewport();if(tab==='chat')scheduleChatScroll()});window.addEventListener('resize',()=>{fitChatViewport();if(tab==='chat')scheduleChatScroll()});window.addEventListener('orientationchange',()=>{chatViewportBaseline=window.innerHeight;fitChatViewport()});document.addEventListener('focusin',()=>{fitChatViewport();if(tab==='chat')scheduleChatScroll()});document.addEventListener('focusout',()=>setTimeout(fitChatViewport,100));setInterval(()=>{if(auth&&!document.hidden&&chatSync){chatSync.flush();chatSync.pull();}},5000);
 window.addEventListener('focus',()=>{if(auth)refresh(false).catch(()=>{})});window.addEventListener('online',()=>{if(auth)refresh(false).catch(()=>{})});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&auth){resumeChat();refresh(false).catch(()=>{})}});setInterval(()=>{if(auth&&!document.hidden&&!busy&& !$('editor').open&&!$('accountEditor').open&&!$('cardEditor').open)refresh(false).catch(()=>{})},20000);
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).catch(()=>{});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).then(reg=>{workerRegistration=reg;reg.update().catch(()=>{});}).catch(()=>{});
 if(auth){$('loginError').textContent='Abrindo seu financeiro…';refresh().catch(()=>{});}
 
 // Credit card conversation and invoice screens. All writes still go through the authenticated API.
