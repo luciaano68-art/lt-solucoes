@@ -3,8 +3,8 @@ export function normalize(v){return String(v||'').normalize('NFD').replace(/[\u0
 export function moneyCents(value){let s=String(value).replace(/R\$/gi,'').replace(/\s/g,'');if(!/^-?\d+(?:[.,]\d+)*$/.test(s))return null;let negative=s.startsWith('-');s=s.replace(/^-/,'');let whole=s,fraction='';if(s.includes(',')){if(s.indexOf(',')!==s.lastIndexOf(','))return null;[whole,fraction]=s.split(',');whole=whole.replace(/\./g,'');}else if(s.includes('.')){const parts=s.split('.');if(parts.length===2&&parts[1].length<=2){[whole,fraction]=parts}else if(parts.slice(1).every(p=>p.length===3)){whole=parts.join('')}else return null;}if(fraction.length>2||!/^[0-9]+$/.test(whole)||fraction&&!/^\d+$/.test(fraction))return null;const n=Number(whole)*100+Number((fraction+'00').slice(0,2));return Number.isSafeInteger(n)?(negative?-n:n):null}
 function isoDate(y,m,d){const s=String(y).padStart(4,'0')+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');return new Date(s+'T12:00:00Z').toISOString().slice(0,10)===s?s:null}
 export function shiftDate(date,n){let d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
-export function categoryOf(text){const n=normalize(text);for(const [label,rx] of [['Alimentação',/mercado|comida|restaurante|almoco|jantar|lanche/],['Moradia',/aluguel|agua|luz|energia|internet|condominio/],['Transporte',/diesel|gasolina|combustivel|carro|trator|uber|pneu/],['Saúde',/farmacia|remedio|medico|dentista|psicolog|saude/],['Lazer',/cinema|passeio|lazer|viagem/],['Salário',/salario|pagamento do trabalho/],['Compras',/compra|roupa|loja/],['Serviços',/servico|manutencao|conserto/]])if(rx.test(n))return label;return 'Outros'}
-export function parseMessage(text,accounts,today){
+export function categoryOf(text){const n=normalize(text);for(const [label,rx] of [['Alimentação',/mercado|comida|restaurante|almoco|jantar|lanche/],['Moradia',/aluguel|agua|luz|energia|internet|condominio/],['Transporte',/diesel|gasolina|combustivel|carro|trator|uber|pneu/],['Saúde',/farmacia|remedio|medico|dentista|psicolog|saude/],['Lazer',/cinema|passeio|lazer|viagem/],['Salário',/salario|pagamento do trabalho/],['Compras',/compra|roupa|loja/],['Serviços',/servico|manutencao|conserto|recarga|recarda|celular|telefone/]])if(rx.test(n))return label;return 'Outros'}
+export function parseMessage(text,accounts,today,cards=[]){
  const n=normalize(text),p={};
  if(/\b(recebi|recebido|entrou|ganhei|vendi|venda|salario|entrada|a receber)\b/.test(n))p.kind='income';
  if(/\b(gastei|paguei|pago|comprei|compra|despesa|saida|a pagar|vou pagar)\b/.test(n))p.kind='expense';
@@ -20,6 +20,7 @@ export function parseMessage(text,accounts,today){
  else if(/\bamanha\b/.test(n))date=shiftDate(today,1);else if(/\bontem\b/.test(n))date=shiftDate(today,-1);
  if(d||/\b(hoje|amanha|ontem)\b/.test(n)){p.date=date;p.dueDate=date}
  if(/\b(luciano|meu pessoal)\b/.test(n))p.scope='luciano';else if(/\byasmin\b/.test(n))p.scope='yasmin';else if(/\b(casal|nosso|nossa|compartilhado)\b/.test(n))p.scope='casal';
+ const credit=/\b(cartao|credito)\b/.test(n)&&! /\bdebito\b/.test(n);const matches=cards.filter(c=>n.includes(normalize(c.name)));if(matches.length===1)p.cardId=matches[0].id;if(credit){p.credit=true;p.kind='expense';p.status='pending';delete p.accountId;}
  p.category=categoryOf(text);
  return p;
 }
