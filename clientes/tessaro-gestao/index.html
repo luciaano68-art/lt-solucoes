@@ -1939,17 +1939,23 @@ body:has(.carnes-system){background:#eef3f8}
       return;
     }
 
-    // Uso interno: preserva a sessão local ao atualizar/abrir o PWA.
-    // Só mostra o login quando não existe uma sessão interna válida salva.
-    onlineUser={id:'internal_tessaro',email:''};
-    const savedSession=session;
+    // TESSARO PDV PROTOTIPO: acesso direto após entrar pelo painel LT Soluções.
+    // O controle por funcionário/PIN será criado na etapa de abertura/operadores.
+    onlineUser={id:'internal_tessaro_prototipo',email:'',local:true};
     await loadRemoteState();
-    if(savedSession?.role==='client' && savedSession?.localUser==='LUCIANO' && savedSession?.companyId){
-      session=savedSession;
-      renderApp();
+    const activeCompanies=(db.companies||[]).filter(c=>companyStatus(c)==='active');
+    const internalCompany=(db.companies||[]).find(c=>String(c.cnpj||'').replace(/\D/g,'')==='28851513000125')
+      ||(db.companies||[]).find(c=>String(c.name||'').toLowerCase().includes('tessaro'))
+      ||activeCompanies.find(c=>c.id!=='company_demo')
+      ||activeCompanies[0]
+      ||(db.companies||[])[0];
+    if(!internalCompany){
+      root('<div class="notice error" style="margin:30px">Empresa Tessaro não encontrada na base do protótipo.</div>');
       return;
     }
-    showLogin();
+    const internalUser=(db.users||[]).find(u=>u.companyId===internalCompany.id);
+    setSession({role:'client',email:'',companyId:internalCompany.id,userId:internalUser?.id||'prototype_user',localUser:'PROTOTIPO'});
+    renderApp();
   }
 
   async function internalTessaroLogin(username,password){
