@@ -50,3 +50,38 @@ export function cardSpendingReply(text,data,today){
  });
  return {text:(selected.length>1?'Total nos cartões consultados: '+money(sum)+'.\n\n':'Total de compras no cartão de crédito:\n')+lines.join('\n\n')+'\n\nConsidera somente as compras registradas no app.',awaitingChoice:false};
 }
+
+// Invoice balances are separate from purchases made during a calendar month.
+export function invoiceValueReply(text,data,today){
+ const n=normalize(text);
+ if(!/\bfaturas?\b/.test(n)||!(/\b(valor|valores|quanto|qual|quais|total|mostre|mostrar|ver|consulta|consultar)\b/.test(n)||/^faturas?(?: a pagar)?[.!?]*$/.test(n)))return null;
+ if(/\b(fechar|feche|fechou|fechamento|pagar|paguei|pagamento|lancar|registrar|gastei|comprei)\b/.test(n.replace(/\ba pagar\b/g,'')))return null;
+ const cards=data.cards||[];
+ if(!cards.length)return {text:'Você ainda não tem cartões cadastrados. Abra Cartões → Adicionar cartão.',awaitingChoice:false};
+ let selected=cards.filter(c=>n.includes(normalize(c.name)));
+ const longest=Math.max(0,...selected.map(c=>normalize(c.name).length));selected=selected.filter(c=>normalize(c.name).length===longest);
+ if(!selected.length)selected=cards.filter(c=>normalize(c.name).split(/[^a-z0-9]+/).filter(w=>w.length>2&&!['cartao','credito','de','do','da'].includes(w)).some(w=>n.split(/[^a-z0-9]+/).includes(w)));
+ if(!selected.length&&/\b(?:cartao|fatura)\s+(?:do|da|de)?\s*(?:sicredi|nubank|itau|bradesco|santander|inter|c6)\b/.test(n))return {text:'Não encontrei esse cartão. Cartões cadastrados: '+cards.map(c=>c.name).join(', ')+'.',awaitingChoice:false};
+ if(!selected.length)selected=cards;
+ const entries=(data.entries||[]).filter(e=>!e.deleted&&e.kind==='expense'&&e.cardId&&e.invoiceId);
+ const paidOnly=/\b(pagas|paga|pagos|pago)\b/.test(n)&&!/\b(nao pagas|nao paga|nao pagos|nao pago)\b/.test(n);
+ let sum=0;
+ const lines=selected.map(card=>{
+  const bills=new Map((data.invoices||[]).filter(b=>b.cardId===card.id).map(b=>[b.id,{...b}]));
+  for(const entry of entries.filter(e=>e.cardId===card.id))if(!bills.has(entry.invoiceId)){
+   const cycle=entry.invoiceId.slice(card.id.length+1);if(!/^\d{4}-\d{2}$/.test(cycle))continue;
+   bills.set(entry.invoiceId,{id:entry.invoiceId,cardId:card.id,cycle,...invoiceDates(card,cycle),status:entries.filter(e=>e.invoiceId===entry.invoiceId).every(e=>e.status==='paid')?'paid':'open'});
+  }
+  const current=invoiceId(card.id,purchaseCycle(today,card,data.invoices||[]));
+  const relevant=[...bills.values()].filter(b=>paidOnly?b.status==='paid':b.status!=='paid').filter(b=>entries.some(e=>e.cardId===card.id&&e.invoiceId===b.id)||b.id===current).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
+  if(!relevant.length)return card.name+': R$ 0,00.\nNenhuma fatura '+(paidOnly?'paga registrada.':'com valor pendente registrada.');
+  let cardSum=0;
+  const details=relevant.map(b=>{
+   const items=entries.filter(e=>e.cardId===card.id&&e.invoiceId===b.id).sort((a,c)=>a.date.localeCompare(c.date));
+   const total=items.reduce((v,e)=>v+e.cents,0);sum+=total;cardSum+=total;
+   return 'Fatura com vencimento para '+b.dueDate.split('-').reverse().join('/')+': '+money(total)+'.\nSituação: '+(b.status==='paid'?'paga':b.status==='closed'?'fechada, aguardando pagamento':'aberta')+'.'+(items.length?'\nCompras:\n'+items.map(e=>'• '+e.date.split('-').reverse().join('/')+' · '+String(e.description||e.category||'Compra sem descrição').replace(/\s+/g,' ').trim()+' · '+money(e.cents)).join('\n'):'\nNenhuma compra registrada.');
+  });
+  return card.name+': '+money(cardSum)+'.\n'+details.join('\n\n');
+ });
+ return {text:(paidOnly?'Faturas pagas:':'Valores das faturas ainda não pagas:')+'\n\n'+lines.join('\n\n')+'\n\nTOTAL: '+money(sum)+'.\nConsidera somente as compras registradas no app.',awaitingChoice:false};
+}
