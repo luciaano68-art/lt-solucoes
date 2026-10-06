@@ -14,9 +14,10 @@ export function unlockedInvoice(data,id){const bill=data.invoices?.find(b=>b.id=
 export function mutateCredit(data,p,user,stamp){data.cards||=[];data.invoices||=[];const today=brazilDate(stamp),uuid=x=>typeof x==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x);
  if(p.action==='card'){
   if(!uuid(p.id)||typeof p.name!=='string'||!p.name.trim()||p.name.length>80||!Number.isInteger(p.closingDay)||p.closingDay<1||p.closingDay>31||!Number.isInteger(p.dueDay)||p.dueDay<1||p.dueDay>31)fail('Confira o nome e os dias de fechamento e vencimento.');
+  if(p.limitCents!==undefined&&p.limitCents!==null&&(!Number.isSafeInteger(p.limitCents)||p.limitCents<0||p.limitCents>100000000000))fail('Informe um limite válido em reais.');
   if(data.cards.some(c=>c.id!==p.id&&c.name.trim().toLowerCase()===p.name.trim().toLowerCase()))fail('Já existe um cartão com esse nome.');const card=data.cards.find(c=>c.id===p.id);
-  if(card){if(card.version!==p.version)fail('Este cartão mudou em outro aparelho. Atualize antes de editar.',409);Object.assign(card,{name:p.name.trim(),closingDay:p.closingDay,dueDay:p.dueDay,version:card.version+1,updatedBy:user.name,updatedAt:stamp})}
-  else data.cards.push({id:p.id,name:p.name.trim(),closingDay:p.closingDay,dueDay:p.dueDay,version:1,createdBy:user.name,createdAt:stamp});
+  if(card){if(card.version!==p.version)fail('Este cartão mudou em outro aparelho. Atualize antes de editar.',409);Object.assign(card,{name:p.name.trim(),closingDay:p.closingDay,dueDay:p.dueDay,...(p.limitCents!==undefined?{limitCents:p.limitCents}:{}),version:card.version+1,updatedBy:user.name,updatedAt:stamp})}
+  else data.cards.push({id:p.id,name:p.name.trim(),closingDay:p.closingDay,dueDay:p.dueDay,limitCents:p.limitCents??null,version:1,createdBy:user.name,createdAt:stamp});
   const c=data.cards.find(c=>c.id===p.id);ensureInvoice(data,c,purchaseCycle(today,c,data.invoices),stamp);return data;
  }
  if(p.action==='ensureInvoices'){for(const c of data.cards)ensureInvoice(data,c,purchaseCycle(today,c,data.invoices),stamp);return data}
@@ -39,3 +40,5 @@ export function mutateCredit(data,p,user,stamp){data.cards||=[];data.invoices||=
  }else fail('Ação da fatura não reconhecida.');
  bill.version++;bill.updatedBy=user.name;bill.updatedAt=stamp;return data;
 }
+
+export function cardLimit(data,card){const used=data.entries.filter(e=>!e.deleted&&e.cardId===card.id&&e.status!=='paid').reduce((total,e)=>total+e.cents,0);return {limit:card.limitCents??null,used,available:card.limitCents===null||card.limitCents===undefined?null:card.limitCents-used}}
