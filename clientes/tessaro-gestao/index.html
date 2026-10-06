@@ -2383,6 +2383,8 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
   function layout(content, active='dashboard'){
     const master = session.role==='master';
     const representativeMode = session.role==='representative';
+    const prototypeArea = (!master && !representativeMode) ? (sessionStorage.getItem('tessaro_prototype_area')||'management') : null;
+    const operationMode = prototypeArea==='operation';
     const company = session.role==='client' ? db.companies.find(c=>c.id===session.companyId) : null;
     const representative = representativeMode
       ? (db.representatives || []).find(r=>r.id===session.representativeId)
@@ -2445,22 +2447,25 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
                 <button data-page="repPaymentConditions" class="${active==='repPaymentConditions'?'active':''}"><i class="nav-icon">$</i>Condições</button>
                 <button data-page="repProfile" class="${active==='repProfile'?'active':''}"><i class="nav-icon">⚙</i>Meu perfil</button>
               ` : `
-                <button id="prototypeAreaChooser" type="button"><i class="nav-icon">⇆</i>Trocar PDV / Gestão</button>
-                <button data-page="dashboard" class="${active==='dashboard'?'active':''}"><i class="nav-icon">⌂</i>Início <kbd>F1</kbd></button>
-                <div class="nav-section-title">OPERAÇÃO</div>
-                <button data-page="pdv" class="${active==='pdv'?'active':''}"><i class="nav-icon">▣</i>PDV <kbd>F2</kbd></button>
-                <button data-page="delivery" class="${active==='delivery'?'active':''}"><i class="nav-icon">☏</i>Delivery <kbd>F3</kbd></button>
-                <button data-page="pedidosFixos" class="${active==='pedidosFixos'?'active':''}"><i class="nav-icon">✓</i>Clientes Fixos <kbd>F4</kbd></button>
-                <button data-page="fiados" class="${active==='fiados'?'active':''}"><i class="nav-icon">$</i>Fiados <kbd>F5</kbd></button>
-                <div class="nav-section-title">GESTÃO</div>
-                <button data-page="financeiro" class="${active==='financeiro'?'active':''}"><i class="nav-icon">▥</i>Financeiro <kbd>F6</kbd></button>
-                <button data-page="purchasesHub" class="${['purchasesHub','quotations','orders','suppliers','categories','units','products','history','purchaseIntelligence'].includes(active)?'active':''}"><i class="nav-icon">▤</i>Compras / Cotações <kbd>F7</kbd></button>
-                <button data-page="recebimentos" class="${active==='recebimentos'?'active':''}"><i class="nav-icon">✓</i>Recebimentos <kbd>F8</kbd></button>
-                <button data-page="estoque" class="${active==='estoque'?'active':''}"><i class="nav-icon">▦</i>Estoque <kbd>F9</kbd></button>
-                <button data-page="carnes" class="${active==='carnes'?'active':''}"><i class="nav-icon">♨</i>Carnes <kbd>F10</kbd></button>
-                <button data-page="relatorios" class="${active==='relatorios'?'active':''}"><i class="nav-icon">▤</i>Relatórios <kbd>F11</kbd></button>
-                <button data-page="companySettings" class="${active==='companySettings'?'active':''}"><i class="nav-icon">⚙</i>Configurações <kbd>F12</kbd></button>
-                <button id="installAppBtn" type="button"><i class="nav-icon">⬇</i>Instalar aplicativo</button>
+                <button id="prototypeAreaChooser" type="button"><i class="nav-icon">⇆</i>Sair desta área</button>
+                ${operationMode ? `
+                  <div class="nav-section-title">PDV / OPERAÇÃO</div>
+                  <button data-page="pdv" class="${active==='pdv'?'active':''}"><i class="nav-icon">▣</i>PDV <kbd>F2</kbd></button>
+                  <button data-page="delivery" class="${active==='delivery'?'active':''}"><i class="nav-icon">☏</i>Delivery <kbd>F3</kbd></button>
+                  <button data-page="pedidosFixos" class="${active==='pedidosFixos'?'active':''}"><i class="nav-icon">✓</i>Clientes Fixos <kbd>F4</kbd></button>
+                  <button data-page="fiados" class="${active==='fiados'?'active':''}"><i class="nav-icon">$</i>Fiados <kbd>F5</kbd></button>
+                ` : `
+                  <button data-page="dashboard" class="${active==='dashboard'?'active':''}"><i class="nav-icon">⌂</i>Visão Geral <kbd>F1</kbd></button>
+                  <div class="nav-section-title">GESTÃO</div>
+                  <button data-page="financeiro" class="${active==='financeiro'?'active':''}"><i class="nav-icon">▥</i>Financeiro <kbd>F6</kbd></button>
+                  <button data-page="purchasesHub" class="${['purchasesHub','quotations','orders','suppliers','categories','units','products','history','purchaseIntelligence'].includes(active)?'active':''}"><i class="nav-icon">▤</i>Compras / Cotações <kbd>F7</kbd></button>
+                  <button data-page="recebimentos" class="${active==='recebimentos'?'active':''}"><i class="nav-icon">✓</i>Recebimentos <kbd>F8</kbd></button>
+                  <button data-page="estoque" class="${active==='estoque'?'active':''}"><i class="nav-icon">▦</i>Estoque <kbd>F9</kbd></button>
+                  <button data-page="carnes" class="${active==='carnes'?'active':''}"><i class="nav-icon">♨</i>Carnes <kbd>F10</kbd></button>
+                  <button data-page="relatorios" class="${active==='relatorios'?'active':''}"><i class="nav-icon">▤</i>Relatórios <kbd>F11</kbd></button>
+                  <button data-page="companySettings" class="${active==='companySettings'?'active':''}"><i class="nav-icon">⚙</i>Configurações <kbd>F12</kbd></button>
+                  <button id="installAppBtn" type="button"><i class="nav-icon">⬇</i>Instalar aplicativo</button>
+                `}
               `}
             </nav>
             <div class="spacer"></div>
@@ -2536,7 +2541,10 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
         if(event.altKey||event.ctrlKey||event.metaKey) return;
         const tag=(event.target?.tagName||'').toUpperCase();
         if(['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
-        const hotkeys={F1:'dashboard',F2:'pdv',F3:'delivery',F4:'pedidosFixos',F5:'fiados',F6:'financeiro',F7:'purchasesHub',F8:'recebimentos',F9:'estoque',F10:'carnes',F11:'relatorios',F12:'companySettings'};
+        const area=sessionStorage.getItem('tessaro_prototype_area');
+        const hotkeys=area==='operation'
+          ? {F2:'pdv',F3:'delivery',F4:'pedidosFixos',F5:'fiados'}
+          : {F1:'dashboard',F6:'financeiro',F7:'purchasesHub',F8:'recebimentos',F9:'estoque',F10:'carnes',F11:'relatorios',F12:'companySettings'};
         const page=hotkeys[event.key];
         if(page){event.preventDefault();navigate(page);}
       });
@@ -2662,6 +2670,13 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
   }
 
   function navigate(page){
+    const area=sessionStorage.getItem('tessaro_prototype_area');
+    const operationPages=['pdv','delivery','pedidosFixos','fiados'];
+    const managementPages=['dashboard','financeiro','purchasesHub','categories','units','products','suppliers','quotations','orders','history','purchaseIntelligence','recebimentos','estoque','carnes','relatorios','companySettings'];
+    if(session?.role==='client'){
+      if(area==='operation' && !operationPages.includes(page)){ pdvPage(); return; }
+      if(area==='management' && operationPages.includes(page)){ dashboardPage(); return; }
+    }
     const routes = {
       masterDashboard, companiesPage, masterRepresentativesPage, accessCodesPage, settingsPage,
       dashboardPage, pdvPage, deliveryPage, estoquePage, recebimentosPage, relatoriosPage, fiadosPage, pedidosFixosPage, carnesPage, financeiroPage, purchasesHubPage, categoriesPage, unitsPage, productsPage, suppliersPage,
