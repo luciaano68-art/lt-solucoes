@@ -2407,6 +2407,7 @@ body:has(.carnes-system){background:#eef3f8}
                 <button data-page="repPaymentConditions" class="${active==='repPaymentConditions'?'active':''}"><i class="nav-icon">$</i>Condições</button>
                 <button data-page="repProfile" class="${active==='repProfile'?'active':''}"><i class="nav-icon">⚙</i>Meu perfil</button>
               ` : `
+                <button id="prototypeAreaChooser" type="button"><i class="nav-icon">⇆</i>Trocar PDV / Gestão</button>
                 <button data-page="dashboard" class="${active==='dashboard'?'active':''}"><i class="nav-icon">⌂</i>Início <kbd>F1</kbd></button>
                 <div class="nav-section-title">OPERAÇÃO</div>
                 <button data-page="pdv" class="${active==='pdv'?'active':''}"><i class="nav-icon">▣</i>PDV <kbd>F2</kbd></button>
@@ -2486,6 +2487,9 @@ body:has(.carnes-system){background:#eef3f8}
     }
 
     document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{document.querySelector('.client-app')?.classList.remove('menu-open');navigate(b.dataset.page);});
+    const areaChooser=document.querySelector('#prototypeAreaChooser');
+    if(areaChooser) areaChooser.onclick=()=>{sessionStorage.removeItem('tessaro_prototype_area');prototypeAccessSelector();};
+
     const backToPurchasesHub=document.querySelector('#backToPurchasesHub');
     if(backToPurchasesHub) backToPurchasesHub.onclick=()=>navigate('purchasesHub');
     if(!window.__tessaroHotkeysBound){
@@ -2579,6 +2583,34 @@ body:has(.carnes-system){background:#eef3f8}
       <section class="grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px">${['Caixa diário','Vendas','Financeiro','Estoque','Carnes','Delivery','Compras / Fornecedores'].map(r=>`<div class="card"><strong>${r}</strong><p class="muted">Relatório padrão</p></div>`).join('')}</section>`,'relatorios');
     document.querySelector('#askReport').onclick=()=>{const q=document.querySelector('#reportPrompt').value.trim();if(!q)return;document.querySelector('#reportChat').innerHTML='<strong>Solicitação registrada:</strong><br>'+esc(q)+'<br><br><span class="muted">O conector inteligente será ativado em etapa posterior.</span>'};
     document.querySelector('#pdfReport').onclick=()=>window.print();
+  }
+
+  function prototypeAccessSelector(){
+    applyTheme(null);
+    root(`
+      <div style="min-height:100vh;background:#f3f6fb;display:grid;place-items:center;padding:24px">
+        <section style="width:min(900px,100%);background:#fff;border:1px solid #dfe6ef;border-radius:24px;padding:34px;box-shadow:0 18px 50px rgba(18,38,63,.10)">
+          <div style="text-align:center;margin-bottom:28px">
+            <div style="font-size:12px;font-weight:900;letter-spacing:.14em;color:#59718f">TESSARO</div>
+            <h1 style="margin:5px 0 8px">PDV PROTOTIPO</h1>
+            <p class="muted" style="margin:0">Selecione como deseja entrar no sistema.</p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px">
+            <button id="enterOperation" style="border:1px solid #d8e2ef;background:#fff;border-radius:20px;padding:32px;text-align:left;cursor:pointer;box-shadow:0 8px 24px rgba(18,38,63,.07)">
+              <div style="font-size:42px">🧾</div><h2 style="font-size:26px;margin:14px 0 8px">PDV / Operação</h2>
+              <p class="muted">Vendas, mesas, balcão, caixa, Delivery, Clientes Fixos e Fiados.</p>
+              <strong>Entrar no PDV →</strong>
+            </button>
+            <button id="enterManagement" style="border:1px solid #d8e2ef;background:#fff;border-radius:20px;padding:32px;text-align:left;cursor:pointer;box-shadow:0 8px 24px rgba(18,38,63,.07)">
+              <div style="font-size:42px">📊</div><h2 style="font-size:26px;margin:14px 0 8px">Gestão</h2>
+              <p class="muted">Financeiro, Compras, Cotações, Recebimentos, Estoque, Carnes, Relatórios e Configurações.</p>
+              <strong>Entrar na Gestão →</strong>
+            </button>
+          </div>
+        </section>
+      </div>`);
+    document.querySelector('#enterOperation').onclick=()=>{sessionStorage.setItem('tessaro_prototype_area','operation');pdvPage();};
+    document.querySelector('#enterManagement').onclick=()=>{sessionStorage.setItem('tessaro_prototype_area','management');dashboardPage();};
   }
 
   function navigate(page){
@@ -10487,7 +10519,7 @@ Clientes quitados não entram no total a receber e nenhum saldo será alterado.`
       return;
     }
 
-    dashboardPage();
+    prototypeAccessSelector();
   }
 
   supabaseClient.auth.onAuthStateChange((_event,authSession)=>{
