@@ -61,3 +61,5 @@ body{background:radial-gradient(ellipse at top left,#eaf2ed 0,transparent 50%),v
 @media(max-width:480px){.top{gap:8px}.wordmark{gap:8px}.user-actions{gap:5px}.user-actions .text-button{font-size:12px;padding:8px;min-height:36px}.user-actions .icon-button{width:36px;min-width:36px;min-height:36px;padding:5px}.user-actions>span{display:none}.chat-toolbar h2{font-size:19px}.card{padding:18px}.page-head{flex-wrap:wrap;align-items:flex-start}#userEditor{padding:20px}}
 @media(max-width:360px){.wordmark b{font-size:13px}.brand-symbol.small{width:30px;height:30px;font-size:23px}.top{padding:10px}.user-actions .text-button{font-size:11px;padding:7px}.user-actions .icon-button{width:32px;min-width:32px}#manageUsers{padding-inline:6px}}
 .chat-keyboard #manageUsers{display:none}
+
+#installHelp{max-width:440px}#installSteps{line-height:1.65;margin:12px 0 24px}#installHelp button:not(.icon-button){width:100%;margin-top:12px}#installCopyStatus{overflow-wrap:anywhere}
