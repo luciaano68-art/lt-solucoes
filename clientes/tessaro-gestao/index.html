@@ -49,7 +49,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0
 .sidebar{background:linear-gradient(180deg,#061f49,#031632);padding:25px 14px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
 .sidebar-brand{padding:0 8px 26px}.sidebar .brand-mark{width:52px;height:52px}.sidebar .brand-mark svg{width:50px;height:50px}
 .sidebar .brand-tessaro{font-size:20px}.sidebar .brand-cotacoes{font-size:9px;letter-spacing:.32em;margin-top:5px}.sidebar .brand-slogan{display:none}
-.sidebar nav{display:grid;gap:5px}.sidebar button{border:0;background:transparent;color:#e5edf8;padding:12px 13px;border-radius:8px;text-align:left;cursor:pointer;font-weight:650}
+.sidebar nav{display:grid;gap:5px}
+.nav-section-title{font-size:10px;font-weight:900;letter-spacing:.14em;color:#7f9abb;padding:16px 13px 5px;margin-top:3px}
+.sidebar kbd{float:right;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:5px;padding:1px 5px;font-size:9px;color:#dce8f8;font-family:inherit}
+.quick-ops{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.quick-op{border:0;border-radius:14px;padding:20px;text-align:left;cursor:pointer;background:#fff;box-shadow:var(--shadow);border:1px solid var(--line)}
+.quick-op strong{display:block;font-size:18px;margin:8px 0 4px}.quick-op span{color:var(--muted);font-size:12px}.quick-op kbd{float:right;background:#eef3ff;border:1px solid #cad8f2;border-radius:6px;padding:3px 7px;color:#1556d8}
+@media(max-width:900px){.quick-ops{grid-template-columns:1fr 1fr}.sidebar kbd{display:none}}
+.sidebar button{border:0;background:transparent;color:#e5edf8;padding:12px 13px;border-radius:8px;text-align:left;cursor:pointer;font-weight:650}
 .sidebar button:hover,.sidebar button.active{background:linear-gradient(90deg,#1556d8,#1769ee);color:#fff}.nav-icon{display:inline-grid;width:25px;place-items:center;margin-right:7px;font-style:normal}
 .sidebar .spacer{flex:1}.sidebar-profile{border-top:1px solid rgba(255,255,255,.13);padding:18px 8px 4px;display:flex;align-items:center;gap:10px;color:#fff}
 .avatar{width:37px;height:37px;border-radius:50%;background:#1769ee;display:grid;place-items:center;font-weight:900}.profile-copy{min-width:0}.profile-copy strong{display:block;font-size:12px}.profile-copy span{font-size:10px;color:#b8c9df}
@@ -2400,18 +2407,20 @@ body:has(.carnes-system){background:#eef3f8}
                 <button data-page="repPaymentConditions" class="${active==='repPaymentConditions'?'active':''}"><i class="nav-icon">$</i>Condições</button>
                 <button data-page="repProfile" class="${active==='repProfile'?'active':''}"><i class="nav-icon">⚙</i>Meu perfil</button>
               ` : `
-                <button data-page="dashboard" class="${active==='dashboard'?'active':''}"><i class="nav-icon">⌂</i>Início</button>
-                <button data-page="pdv" class="${active==='pdv'?'active':''}"><i class="nav-icon">▣</i>PDV</button>
-                <button data-page="delivery" class="${active==='delivery'?'active':''}"><i class="nav-icon">☏</i>Delivery</button>
-                <button data-page="estoque" class="${active==='estoque'?'active':''}"><i class="nav-icon">▦</i>Estoque</button>
-                <button data-page="recebimentos" class="${active==='recebimentos'?'active':''}"><i class="nav-icon">✓</i>Recebimentos</button>
-                <button data-page="relatorios" class="${active==='relatorios'?'active':''}"><i class="nav-icon">▤</i>Relatórios</button>
-                <button data-page="fiados" class="${active==='fiados'?'active':''}"><i class="nav-icon">$</i>Fiados</button><button data-page="pedidosFixos" class="${active==='pedidosFixos'?'active':''}"><i class="nav-icon">✓</i>Pedidos Fixos</button>
-                <!-- TESSARO_FIADOS_SEM_FOTOS_V1_20260912: menu de comprovantes removido -->
-                <!-- TESSARO_CARNES_ABERTURA_V23_20260901 --><button data-page="carnes" class="${active==='carnes'?'active':''}"><i class="nav-icon">♨</i>Carnes</button>
-                <button data-page="financeiro" class="${active==='financeiro'?'active':''}"><i class="nav-icon">▥</i>Financeiro</button>
-                <button data-page="purchasesHub" class="${['purchasesHub','quotations','orders','suppliers','categories','units','products','history','purchaseIntelligence'].includes(active)?'active':''}"><i class="nav-icon">▤</i>Pesquisa de preços</button>
-                <button data-page="companySettings" class="${active==='companySettings'?'active':''}"><i class="nav-icon">⚙</i>Configurações</button>
+                <button data-page="dashboard" class="${active==='dashboard'?'active':''}"><i class="nav-icon">⌂</i>Início <kbd>F1</kbd></button>
+                <div class="nav-section-title">OPERAÇÃO</div>
+                <button data-page="pdv" class="${active==='pdv'?'active':''}"><i class="nav-icon">▣</i>PDV <kbd>F2</kbd></button>
+                <button data-page="delivery" class="${active==='delivery'?'active':''}"><i class="nav-icon">☏</i>Delivery <kbd>F3</kbd></button>
+                <button data-page="pedidosFixos" class="${active==='pedidosFixos'?'active':''}"><i class="nav-icon">✓</i>Clientes Fixos <kbd>F4</kbd></button>
+                <button data-page="fiados" class="${active==='fiados'?'active':''}"><i class="nav-icon">$</i>Fiados <kbd>F5</kbd></button>
+                <div class="nav-section-title">GESTÃO</div>
+                <button data-page="financeiro" class="${active==='financeiro'?'active':''}"><i class="nav-icon">▥</i>Financeiro <kbd>F6</kbd></button>
+                <button data-page="purchasesHub" class="${['purchasesHub','quotations','orders','suppliers','categories','units','products','history','purchaseIntelligence'].includes(active)?'active':''}"><i class="nav-icon">▤</i>Compras / Cotações <kbd>F7</kbd></button>
+                <button data-page="recebimentos" class="${active==='recebimentos'?'active':''}"><i class="nav-icon">✓</i>Recebimentos <kbd>F8</kbd></button>
+                <button data-page="estoque" class="${active==='estoque'?'active':''}"><i class="nav-icon">▦</i>Estoque <kbd>F9</kbd></button>
+                <button data-page="carnes" class="${active==='carnes'?'active':''}"><i class="nav-icon">♨</i>Carnes <kbd>F10</kbd></button>
+                <button data-page="relatorios" class="${active==='relatorios'?'active':''}"><i class="nav-icon">▤</i>Relatórios <kbd>F11</kbd></button>
+                <button data-page="companySettings" class="${active==='companySettings'?'active':''}"><i class="nav-icon">⚙</i>Configurações <kbd>F12</kbd></button>
                 <button id="installAppBtn" type="button"><i class="nav-icon">⬇</i>Instalar aplicativo</button>
               `}
             </nav>
@@ -2479,6 +2488,17 @@ body:has(.carnes-system){background:#eef3f8}
     document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{document.querySelector('.client-app')?.classList.remove('menu-open');navigate(b.dataset.page);});
     const backToPurchasesHub=document.querySelector('#backToPurchasesHub');
     if(backToPurchasesHub) backToPurchasesHub.onclick=()=>navigate('purchasesHub');
+    if(!window.__tessaroHotkeysBound){
+      window.__tessaroHotkeysBound=true;
+      document.addEventListener('keydown',event=>{
+        if(event.altKey||event.ctrlKey||event.metaKey) return;
+        const tag=(event.target?.tagName||'').toUpperCase();
+        if(['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+        const hotkeys={F1:'dashboard',F2:'pdv',F3:'delivery',F4:'pedidosFixos',F5:'fiados',F6:'financeiro',F7:'purchasesHub',F8:'recebimentos',F9:'estoque',F10:'carnes',F11:'relatorios',F12:'companySettings'};
+        const page=hotkeys[event.key];
+        if(page){event.preventDefault();navigate(page);}
+      });
+    }
   }
 
 
@@ -3862,6 +3882,13 @@ body:has(.carnes-system){background:#eef3f8}
           <p class="muted">Central de gestão do restaurante: operação, financeiro, compras, estoque, carnes, clientes e relatórios.</p>
         </div>
       </div>
+
+      <section class="quick-ops">
+        <button class="quick-op" data-page="pdv"><kbd>F2</kbd><div style="font-size:26px">🧾</div><strong>PDV</strong><span>Venda rápida, mesas, balcão e caixa</span></button>
+        <button class="quick-op" data-page="delivery"><kbd>F3</kbd><div style="font-size:26px">🛵</div><strong>Delivery</strong><span>Pedidos e acompanhamento</span></button>
+        <button class="quick-op" data-page="pedidosFixos"><kbd>F4</kbd><div style="font-size:26px">🔁</div><strong>Clientes Fixos</strong><span>Pedidos recorrentes e pausas</span></button>
+        <button class="quick-op" data-page="fiados"><kbd>F5</kbd><div style="font-size:26px">💳</div><strong>Fiados</strong><span>Contas e recebimentos de clientes</span></button>
+      </section>
 
       <section class="grid metrics">
         <div class="card metric blue"><div class="metric-icon">$</div><span>Fiados em aberto</span><strong>${money(totalOpen)}</strong><small>${customersOpen} cliente(s) com saldo</small></div>
