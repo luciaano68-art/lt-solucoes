@@ -1,0 +1,25 @@
+{
+  "id": "./distribui.html",
+  "name": "Marcio Bebidas",
+  "short_name": "Marcio Bebidas",
+  "lang": "pt-BR",
+  "start_url": "./distribui.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101827",
+  "theme_color": "#101827",
+  "icons": [
+    {
+      "src": "./marcio-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./marcio-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
