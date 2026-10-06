@@ -6,5 +6,5 @@ export async function updateApplication({currentVersion,refreshData,updateWorker
  if(hasUnsaved()){notify('Há uma atualização disponível. Conclua ou cancele o lançamento em andamento e toque em atualizar novamente.');return 'deferred';}
  await flushChat();if(!isCurrent())return 'cancelled';
  if(hasUnsaved()){notify('Conclua o lançamento em andamento antes de atualizar o aplicativo.');return 'deferred';}
- saveResume();notify('Atualizando o aplicativo…');reload();return 'reloading';
+ await saveResume();if(!isCurrent())return 'cancelled';notify('Atualizando o aplicativo…');reload();return 'reloading';
 }
