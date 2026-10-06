@@ -21,3 +21,11 @@ Da raiz do repositório, com Node moderno:
     node --experimental-default-type=module backend/lt-meu-financeiro/tests/ui-smoke.js
 
 O teste da interface usa um DOM simulado e API em memória. Não acessa nem modifica dados reais. O fluxo também foi verificado na função publicada usando um espaço e um login técnicos temporários, removidos após a verificação.
+
+## Orçamentos opcionais
+
+O recurso começa desativado. Na conversa ou em Contas, abra Orçamentos, ative e defina limites para o mês selecionado. Combustível considera a descrição do lançamento; outras metas usam sua categoria. Compras no crédito contam pela data da compra, e outras despesas quando pagas. Pagamento de fatura não duplica consumo.
+
+Ao ultrapassar um limite, o servidor registra um aviso com o limite e o gasto na ocasião. Na conversa aparece o aviso; em Orçamentos pode salvar um motivo ou escolher não justificar. O histórico permanece ao desativar, editar limites ou corrigir gastos. Não há notificação externa: avisos são exibidos no aplicativo ao salvar, atualizar ou abrir a conversa. Limites são mensais e não são copiados automaticamente ao mês seguinte.
+
+Dados ficam no JSON do próprio espaço, com a autenticação e o controle de concorrência existentes. Não há nova tabela nem modificação de outros sistemas.
