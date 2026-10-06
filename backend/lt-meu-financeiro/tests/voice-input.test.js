@@ -1,4 +1,4 @@
-import {test} from 'node:test';import assert from 'node:assert/strict';import {VoiceInput} from '../../../clientes/financeiro-luciano-yasmin/voice-input.js';
+import {test} from 'node:test';import assert from 'node:assert/strict';import {VoiceInput,voiceEnvironment} from '../../../clientes/financeiro-luciano-yasmin/voice-input.js';
 class Recognition{constructor(){Recognition.current=this;}start(){this.onstart?.()}stop(){this.onend?.()}abort(){this.aborted=true;this.onend?.()}}
 const make=RecognitionClass=>{let states=[];const timers=new Map();const voice=new VoiceInput({Recognition:RecognitionClass,onChange:s=>states.push(s),setTimer:(fn,ms)=>{timers.set(ms,fn);return ms},clearTimer:id=>timers.delete(id)});return {voice,states,timers};};
 test('fala pt-BR gera texto parcial e completo, para na revisão e nunca envia automaticamente',()=>{const f=make(Recognition);f.voice.start();const r=Recognition.current;assert.equal(r.lang,'pt-BR');assert.equal(r.interimResults,true);r.onresult({results:[[{transcript:'Gastei trinta reais'}]]});assert.equal(f.voice.text,'Gastei trinta reais');r.onresult({results:[[{transcript:'Gastei 30 reais'}],[{transcript:'com sementes'}]]});assert.equal(f.voice.text,'Gastei 30 reais com sementes');f.voice.stop();assert.equal(f.voice.phase,'review');assert.equal(f.timers.size,0);});
@@ -6,3 +6,14 @@ test('cancelar aborta microfone e ignora resultado atrasado de outra sessão',()
 test('sem suporte orienta ditado do teclado; permissão negada mantém erro e libera edição manual',()=>{const f=make(undefined);f.voice.start();assert.equal(f.voice.phase,'unsupported');assert.match(f.voice.error,/teclado/);const g=make(Recognition);g.voice.start();Recognition.current.onerror({error:'not-allowed'});assert.equal(g.voice.phase,'error');assert.match(g.voice.error,/Permita/);assert.ok(Recognition.current.aborted);});
 test('sessão para após 60s e libera o microfone mesmo sem evento final do navegador',()=>{class Hanging extends Recognition{stop(){}abort(){this.aborted=true;}}const f=make(Hanging);f.voice.start();const r=Recognition.current;r.onresult({results:[[{transcript:'Recebi 50 reais'}]]});f.timers.get(60000)();assert.equal(f.voice.phase,'stopping');f.timers.get(3000)();assert.equal(f.voice.phase,'review');assert.ok(r.aborted);});
 test('permissão tardia após parar não volta a ligar o microfone',()=>{class Late extends Recognition{start(){}stop(){}abort(){this.aborted=true;}}const f=make(Late);f.voice.start();f.voice.stop();Recognition.current.onstart();assert.ok(Recognition.current.aborted);});
+
+test('iPhone e iPad instalados usam ditado sem iniciar reconhecimento indisponível; Safari e Android preservam reconhecimento',()=>{
+ const iphone={userAgent:'Mozilla iPhone',standalone:true};assert.deepEqual(voiceEnvironment(iphone),{ios:true,keyboard:true,continuous:false});
+ assert.equal(voiceEnvironment({platform:'MacIntel',maxTouchPoints:5},{matchMedia:()=>({matches:true})}).keyboard,true);
+ assert.deepEqual(voiceEnvironment({userAgent:'iPhone'}),{ios:true,keyboard:false,continuous:false});
+ assert.equal(voiceEnvironment({userAgent:'Android'},{matchMedia:()=>({matches:true})}).keyboard,false);
+ let starts=0;class Unavailable{start(){starts++}}const v=new VoiceInput({Recognition:Unavailable,keyboard:true});v.start();assert.equal(starts,0);assert.equal(v.phase,'dictation');
+});
+test('reconhecimento que nunca pede permissão sai da espera em oito segundos e aborta; ditado preserva texto na interface',()=>{
+ class Silent extends Recognition{start(){}abort(){this.aborted=true}}const f=make(Silent);f.voice.start();const r=Recognition.current;assert.equal(f.voice.phase,'starting');f.timers.get(8000)();assert.equal(f.voice.phase,'error');assert.ok(r.aborted);assert.equal(f.timers.size,0);assert.match(f.voice.error,/Ditar pelo teclado/);r.onstart?.();assert.equal(f.voice.phase,'error');f.voice.useKeyboard();assert.equal(f.voice.phase,'dictation');
+});
