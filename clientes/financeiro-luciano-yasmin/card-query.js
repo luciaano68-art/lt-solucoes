@@ -45,7 +45,8 @@ export function cardSpendingReply(text,data,today){
   const included=period?purchases.filter(e=>e.date?.startsWith(period)):historical?purchases:purchases.filter(e=>e.invoiceId===id);
   const total=included.reduce((v,e)=>v+e.cents,0);sum+=total;
   const pending=purchases.filter(e=>e.status!=='paid').reduce((v,e)=>v+e.cents,0);
-  return card.name+': '+money(total)+'.\n'+(period?'Compras '+label+'.':historical?'Todas as compras registradas.':'Na fatura com vencimento para '+bill.dueDate.split('-').reverse().join('/')+'.')+'\nAinda não pago em todas as faturas deste cartão: '+money(pending)+'.';
+  const purchasesText=included.length?'\nCompras:\n'+included.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(e=>'• '+e.date.split('-').reverse().join('/')+' · '+String(e.description||e.category||'Compra sem descrição').replace(/\s+/g,' ').trim()+' · '+money(e.cents)).join('\n'):'\nNenhuma compra registrada nesta '+(period||historical?'consulta.':'fatura.');
+  return card.name+': '+money(total)+'.\n'+(period?'Compras '+label+'.':historical?'Todas as compras registradas.':'Na fatura com vencimento para '+bill.dueDate.split('-').reverse().join('/')+'.')+'\nAinda não pago em todas as faturas deste cartão: '+money(pending)+'.'+purchasesText;
  });
  return {text:(selected.length>1?'Total nos cartões consultados: '+money(sum)+'.\n\n':'Total de compras no cartão de crédito:\n')+lines.join('\n\n')+'\n\nConsidera somente as compras registradas no app.',awaitingChoice:false};
 }
