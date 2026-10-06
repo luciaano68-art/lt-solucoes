@@ -29,3 +29,15 @@ O recurso começa desativado. Na conversa ou em Contas, abra Orçamentos, ative 
 Ao ultrapassar um limite, o servidor registra um aviso com o limite e o gasto na ocasião. Na conversa aparece o aviso; em Orçamentos pode salvar um motivo ou escolher não justificar. O histórico permanece ao desativar, editar limites ou corrigir gastos. Não há notificação externa: avisos são exibidos no aplicativo ao salvar, atualizar ou abrir a conversa. Limites são mensais e não são copiados automaticamente ao mês seguinte.
 
 Dados ficam no JSON do próprio espaço, com a autenticação e o controle de concorrência existentes. Não há nova tabela nem modificação de outros sistemas.
+
+## Usuários e permissões
+
+Luciano é o administrador protegido. Os acessos existentes e suas senhas são preservados. Novos usuários são membros do mesmo espaço financeiro, com consulta como padrão e demais permissões desativadas. Não há convite nem cadastro público.
+
+A consulta permite ver todo o financeiro compartilhado; a conversa permanece particular por usuário. As permissões de lançamentos, faturas, contas, cartões e orçamentos são verificadas no servidor a cada chamada. Sem consulta, o estado financeiro retorna vazio e as rotas de conversa são bloqueadas. Desativar ou trocar a senha revoga os tokens do usuário. O proprietário não pode ser desativado ou alterado pela tela; membros não gerenciam usuários.
+
+Aplicar users-schema.sql antes de publicar a função atualizada. As tabelas internas seguem sem acesso para anon/authenticated e protegidas por RLS. Apenas a função com autenticação própria acessa os dados pelo serviço interno.
+
+O comando de fechar fatura apresenta compras e total já lançados. Total diferente mantém a conferência de divergências e fechamento exige confirmação. A conta do pagamento pode ser alterada na revisão. Baixas comuns aceitam a conta selecionada atomicamente no mesmo controle de revisão.
+
+Testes de API com importação de TypeScript usam Node 24.
