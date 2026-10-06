@@ -1949,12 +1949,22 @@ body:has(.carnes-system){background:#eef3f8}
       ||activeCompanies.find(c=>c.id!=='company_demo')
       ||activeCompanies[0]
       ||(db.companies||[])[0];
-    if(!internalCompany){
-      root('<div class="notice error" style="margin:30px">Empresa Tessaro não encontrada na base do protótipo.</div>');
-      return;
+    let prototypeCompany=internalCompany;
+    if(!prototypeCompany){
+      prototypeCompany={
+        id:'tessaro_pdv_prototipo',
+        name:'TESSARO PDV PROTOTIPO',
+        cnpj:'28851513000125',
+        status:'active',
+        createdAt:new Date().toISOString(),
+        prototype:true
+      };
+      if(!Array.isArray(db.companies)) db.companies=[];
+      db.companies.push(prototypeCompany);
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(db));
     }
-    const internalUser=(db.users||[]).find(u=>u.companyId===internalCompany.id);
-    setSession({role:'client',email:'',companyId:internalCompany.id,userId:internalUser?.id||'prototype_user',localUser:'PROTOTIPO'});
+    const internalUser=(db.users||[]).find(u=>u.companyId===prototypeCompany.id);
+    setSession({role:'client',email:'',companyId:prototypeCompany.id,userId:internalUser?.id||'prototype_user',localUser:'PROTOTIPO'});
     renderApp();
   }
 
