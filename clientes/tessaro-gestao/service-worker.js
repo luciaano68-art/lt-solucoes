@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'lt-tessaro-gestao-dev-';
-const CACHE_NAME = CACHE_PREFIX + 'v44';
+const CACHE_NAME = CACHE_PREFIX + 'v45';
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 const APP_SCOPE = new URL(self.registration.scope);
 const INDEX_URL = new URL('./index.html', APP_SCOPE).href;
