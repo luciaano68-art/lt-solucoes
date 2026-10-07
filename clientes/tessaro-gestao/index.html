@@ -1373,6 +1373,27 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
 .management-module-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}.management-module{background:#fff;border:1px solid var(--line);border-radius:12px;padding:17px;text-align:left;cursor:pointer;min-height:135px}.management-module:hover{border-color:#a8c6ee;background:#fbfdff}.management-module .module-icon{font-size:23px}.management-module h3{font-size:15px;margin:13px 0 5px}.management-module p{font-size:12px;line-height:1.45;color:var(--muted);margin:0}
 @media(max-width:1100px){.pdv-command{grid-template-columns:1fr}.management-module-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:650px){.pdv-channel-grid,.management-module-grid{grid-template-columns:1fr}}
 
+
+/* PDV LANCHONETE V3 */
+.area-operation .shell{grid-template-columns:86px minmax(0,1fr)}
+.area-operation .sidebar{padding:12px 8px;background:#111827}
+.area-operation .sidebar-brand .brand-copy,.area-operation .sidebar-profile .profile-copy,.area-operation .nav-section-title,.area-operation .sidebar kbd{display:none}
+.area-operation .sidebar-brand{padding:5px 8px 16px;display:grid;place-items:center}.area-operation .sidebar .brand-mark{width:45px;height:45px}.area-operation .sidebar .brand-mark svg{width:43px;height:43px}
+.area-operation .sidebar nav button{font-size:10px;text-align:center;padding:9px 3px;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;gap:5px}
+.area-operation .sidebar .nav-icon{margin:0;width:auto;font-size:19px}.area-operation .sidebar-profile{justify-content:center}.area-operation .sidebar-profile .avatar{display:none}
+.area-operation .content{max-width:none;padding:18px 20px 30px}
+.pos-topbar{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:12px}
+.pos-title{display:flex;align-items:center;gap:12px}.pos-title h1{font-size:20px;margin:0}.pos-title small{display:block;color:var(--muted);margin-top:2px}.pos-live{display:flex;align-items:center;gap:14px;font-size:12px}.pos-live strong{font-size:12px}.pos-live .status{padding:7px 10px;border-radius:8px;background:#edf9f1;color:#16834b;font-weight:850}
+.pos-workspace{display:grid;grid-template-columns:230px minmax(430px,1fr) 360px;gap:12px;min-height:calc(100vh - 120px)}
+.pos-panel{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}.pos-panel-head{padding:14px 15px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.pos-panel-head h2{font-size:14px;margin:0}.pos-panel-body{padding:13px}
+.pos-search{position:relative;margin-bottom:12px}.pos-search input{padding-left:36px}.pos-search span{position:absolute;left:12px;top:10px;color:#94a3b8}
+.table-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.table-card{border:1px solid #dfe6ee;border-radius:9px;background:#fff;padding:11px;text-align:left;cursor:pointer;min-height:72px}.table-card:hover{border-color:#76a8e8}.table-card strong{font-size:13px;display:block}.table-card small{font-size:10px;color:var(--muted)}.table-card.free{border-left:4px solid #22a75a}.table-card.busy{border-left:4px solid #f59e0b}
+.pos-categories{display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;margin-bottom:10px}.pos-category{white-space:nowrap;border:1px solid #dfe6ee;background:#fff;border-radius:8px;padding:9px 13px;font-size:11px;font-weight:800;cursor:pointer}.pos-category.active{background:#1769e0;color:#fff;border-color:#1769e0}
+.product-grid{display:grid;grid-template-columns:repeat(3,minmax(125px,1fr));gap:9px}.product-tile{border:1px solid #e1e7ef;background:#fff;border-radius:10px;padding:14px;text-align:left;min-height:105px;cursor:pointer}.product-tile:hover{border-color:#75a9ea;box-shadow:0 5px 15px rgba(23,105,224,.08)}.product-tile .picon{font-size:22px}.product-tile strong{display:block;font-size:13px;margin:9px 0 3px}.product-tile b{color:#1769e0;font-size:13px}
+.order-list{display:grid;gap:8px;min-height:210px}.order-empty{display:grid;place-items:center;text-align:center;color:#94a3b8;padding:35px 15px}.order-empty div{font-size:35px;margin-bottom:8px}.order-summary{border-top:1px solid var(--line);padding-top:12px;margin-top:10px}.order-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0}.order-total{display:flex;justify-content:space-between;font-size:19px;font-weight:900;padding:12px 0;border-top:1px dashed #cbd5e1;margin-top:6px}.order-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.order-actions .btn{min-height:45px}.order-actions .finish{grid-column:1/-1;background:#16a34a;color:#fff}
+.pos-shortcuts{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.pos-shortcuts span{font-size:10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:5px 7px;color:#64748b}
+@media(max-width:1200px){.pos-workspace{grid-template-columns:190px 1fr 310px}.product-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:850px){.area-operation .shell{grid-template-columns:1fr}.pos-workspace{grid-template-columns:1fr}.table-cards{grid-template-columns:repeat(4,1fr)}}
+
 </style>
 <style id="mobile-quote-ux-v30">
 @media (max-width:720px){
@@ -2589,40 +2610,65 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
   }
   function pdvPage(){
     const g=tessaroGestaoInit();
-    const todayOrders=g.orders.filter(o=>String(o.createdAt||'').slice(0,10)===todayISO()).length;
+    const now=new Date();
+    const products=(db.products||[]).filter(p=>!p.companyId||p.companyId===session.companyId).slice(0,12);
+    const fallback=[
+      {name:'X-Salada',price:23,icon:'🍔'},{name:'X-Bacon',price:26,icon:'🍔'},{name:'X-Tudo',price:30,icon:'🍔'},
+      {name:'Batata 500g',price:22,icon:'🍟'},{name:'Porção',price:53,icon:'🍽️'},{name:'Refrigerante Lata',price:0,icon:'🥤'},
+      {name:'Refrigerante 2L',price:17,icon:'🥤'},{name:'Marmita Normal',price:28,icon:'🍱'},{name:'Marmita Meia',price:20,icon:'🍱'}
+    ];
+    const shown=products.length?products.map(p=>({name:p.name,price:Number(p.price||p.salePrice||0),icon:'•'})):fallback;
     layout(`
-      <div class="page-head">
-        <div><div class="area-pill">PDV / Operação</div><h1>Frente de Caixa</h1><p class="muted">Venda rápida e operação diária do restaurante.</p></div>
-        <div class="actions">${g.cash.open?'<button class="btn danger" id="closeCash">Fechar caixa</button>':'<button class="btn success" id="openCash">Abrir caixa</button>'}<button class="btn secondary" id="togglePrint">${g.printPaused?'Retomar impressão':'Pausar impressão'}</button></div>
+      <div class="pos-topbar">
+        <div class="pos-title"><div style="font-size:27px">🍔</div><div><h1>TESSARO PDV</h1><small>Frente de caixa · Lanchonete e Restaurante</small></div></div>
+        <div class="pos-live"><span>Operador: <strong>Caixa</strong></span><span>${now.toLocaleDateString('pt-BR')} · ${now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span><span class="status">${g.cash.open?'● CAIXA ABERTO':'○ CAIXA FECHADO'}</span></div>
       </div>
-      <section class="grid metrics">
-        <div class="card metric green"><span>Caixa</span><strong>${g.cash.open?'ABERTO':'FECHADO'}</strong><small>${g.cash.open?'Operação liberada':'Aguardando abertura'}</small></div>
-        <div class="card metric blue"><span>Fundo inicial</span><strong>${money(g.cash.openingAmount)}</strong><small>valor da abertura</small></div>
-        <div class="card metric purple"><span>Pedidos hoje</span><strong>${todayOrders}</strong><small>todos os canais</small></div>
-        <div class="card metric teal"><span>Impressora</span><strong>${g.printPaused?'PAUSADA':'ATIVA'}</strong><small>emissão de pedidos</small></div>
-      </section>
-      <section class="pdv-command">
-        <div class="pdv-main-panel">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:15px"><div><h2 style="margin-bottom:3px">Nova venda</h2><span class="muted" style="font-size:12px">Selecione o tipo de atendimento</span></div><span class="area-pill" style="margin:0">Teclas rápidas</span></div>
-          <div class="pdv-channel-grid">
-            ${[['Mesa','🍽️','Atendimento em mesa'],['Balcão','🛍️','Pedido para retirada'],['Caixa','🧾','Venda direta no caixa'],['Delivery','🛵','Pedido para entrega']].map(x=>`<button class="card pdv-channel" data-channel="${x[0]}"><div class="channel-icon">${x[1]}</div><h2>${x[0]}</h2><p class="muted">${x[2]}</p><strong>ABRIR PEDIDO →</strong></button>`).join('')}
+      <div class="pos-workspace">
+        <aside class="pos-panel">
+          <div class="pos-panel-head"><h2>Mesas / Comandas</h2><button class="btn secondary" style="padding:5px 8px;min-height:0">+</button></div>
+          <div class="pos-panel-body">
+            <div class="pos-search"><span>⌕</span><input placeholder="Buscar mesa"></div>
+            <div class="table-cards">
+              ${Array.from({length:10},(_,i)=>`<button class="table-card ${i===1||i===4?'busy':'free'}"><strong>Mesa ${String(i+1).padStart(2,'0')}</strong><small>${i===1?'R$ 68,00':i===4?'R$ 42,00':'Livre'}</small></button>`).join('')}
+            </div>
+            <div class="pos-shortcuts"><span>F2 Nova venda</span><span>F3 Delivery</span><span>F4 Fixos</span></div>
           </div>
-        </div>
-        <aside class="pdv-side-panel">
-          <h2 style="font-size:17px">Status do caixa</h2>
-          <div class="cash-state ${g.cash.open?'open':''}"><div><small class="muted">Situação atual</small><strong style="display:block">${g.cash.open?'Caixa aberto':'Caixa fechado'}</strong></div><i class="cash-dot"></i></div>
-          <div style="padding:8px 2px 18px"><small class="muted">Abertura</small><div style="font-weight:800;margin-top:3px">${g.cash.open?new Date(g.cash.openedAt).toLocaleString('pt-BR'):'—'}</div></div>
-          <h2 style="font-size:17px;margin-top:8px">Código de barras</h2>
-          <p class="muted" style="font-size:12px">Bipe o produto ou digite o código.</p>
-          <div class="barcode-box"><span>▥</span><input id="barcodeInput" placeholder="Código do produto" autocomplete="off"></div>
         </aside>
-      </section>
+        <main class="pos-panel">
+          <div class="pos-panel-head"><div><h2>Produtos</h2><small class="muted">Toque no item para adicionar</small></div><button class="btn primary" id="newQuickOrder">+ NOVO PEDIDO</button></div>
+          <div class="pos-panel-body">
+            <div class="pos-search"><span>⌕</span><input id="barcodeInput" placeholder="Buscar produto ou ler código de barras" autocomplete="off"></div>
+            <div class="pos-categories">
+              ${['Todos','Lanches','Porções','Bebidas','Almoço','Janta','Adicionais'].map((c,i)=>`<button class="pos-category ${i===0?'active':''}">${c}</button>`).join('')}
+            </div>
+            <div class="product-grid">
+              ${shown.map(p=>`<button class="product-tile" data-product="${esc(p.name)}"><div class="picon">${p.icon}</div><strong>${esc(p.name)}</strong><b>${p.price?money(p.price):'Consultar'}</b></button>`).join('')}
+            </div>
+          </div>
+        </main>
+        <aside class="pos-panel">
+          <div class="pos-panel-head"><div><h2>Comanda atual</h2><small class="muted">Venda rápida</small></div><button class="btn secondary" style="padding:6px 9px;min-height:0">•••</button></div>
+          <div class="pos-panel-body">
+            <div class="order-list" id="posOrderList"><div class="order-empty"><div>🧾</div><strong>Nenhum item lançado</strong><span>Selecione um produto para iniciar a venda.</span></div></div>
+            <div class="order-summary">
+              <div class="order-row"><span>Subtotal</span><strong id="posSubtotal">R$ 0,00</strong></div>
+              <div class="order-row"><span>Desconto</span><span>R$ 0,00</span></div>
+              <div class="order-row"><span>Taxa</span><span>R$ 0,00</span></div>
+              <div class="order-total"><span>Total</span><span id="posTotal">R$ 0,00</span></div>
+            </div>
+            <div class="order-actions"><button class="btn secondary">Enviar pedido</button><button class="btn primary">Receber</button><button class="btn finish">FINALIZAR VENDA</button></div>
+            <div style="margin-top:12px">${g.cash.open?'<button class="btn danger" id="closeCash" style="width:100%">Fechar caixa</button>':'<button class="btn success" id="openCash" style="width:100%">Abrir caixa</button>'}</div>
+          </div>
+        </aside>
+      </div>
     `,'pdv');
+    const cart=[];
+    const renderCart=()=>{const box=document.querySelector('#posOrderList');const total=cart.reduce((a,x)=>a+x.price,0);box.innerHTML=cart.length?cart.map((x,i)=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid #edf1f5;padding:9px 2px;font-size:12px"><span>1× <strong>${esc(x.name)}</strong></span><span>${money(x.price)}</span></div>`).join(''):'<div class="order-empty"><div>🧾</div><strong>Nenhum item lançado</strong><span>Selecione um produto para iniciar a venda.</span></div>';document.querySelector('#posSubtotal').textContent=money(total);document.querySelector('#posTotal').textContent=money(total)};
+    document.querySelectorAll('.product-tile').forEach((b,i)=>b.onclick=()=>{cart.push(shown[i]);renderCart()});
+    document.querySelectorAll('.pos-category').forEach(b=>b.onclick=()=>{document.querySelectorAll('.pos-category').forEach(x=>x.classList.remove('active'));b.classList.add('active')});
     document.querySelector('#openCash')?.addEventListener('click',()=>{const v=prompt('Valor inicial/troco do caixa:','0');if(v===null)return;g.cash={open:true,openedAt:new Date().toISOString(),openingAmount:Number(String(v).replace(',','.'))||0};save();pdvPage()});
-    document.querySelector('#closeCash')?.addEventListener('click',()=>{const counted=prompt('Quanto dinheiro foi contado no caixa?','0');if(counted===null)return;alert('Fechamento registrado. Contado: '+money(Number(String(counted).replace(',','.'))||0));g.cash={open:false,openedAt:null,openingAmount:0};save();pdvPage()});
-    document.querySelector('#togglePrint').onclick=()=>{g.printPaused=!g.printPaused;save();pdvPage()};
-    document.querySelectorAll('.pdv-channel').forEach(b=>b.onclick=()=>alert('Fluxo '+b.dataset.channel+' preparado. Na próxima etapa entra a tela de lançamento de itens, adicionais e pagamento.'));
-    document.querySelector('#barcodeInput').onkeydown=e=>{if(e.key==='Enter'){alert('Código lido: '+e.target.value+' — pronto para vincular ao cadastro de produtos.');e.target.value=''}};
+    document.querySelector('#closeCash')?.addEventListener('click',()=>{const counted=prompt('Quanto dinheiro foi contado no caixa?','0');if(counted===null)return;g.cash={open:false,openedAt:null,openingAmount:0};save();pdvPage()});
+    document.querySelector('#barcodeInput').onkeydown=e=>{if(e.key==='Enter'){alert('Código lido: '+e.target.value);e.target.value=''}};
   }
   function deliveryPage(){
     const g=tessaroGestaoInit();
