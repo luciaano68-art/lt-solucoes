@@ -1394,6 +1394,9 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
 .pos-shortcuts{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.pos-shortcuts span{font-size:10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:5px 7px;color:#64748b}
 @media(max-width:1200px){.pos-workspace{grid-template-columns:190px 1fr 310px}.product-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:850px){.area-operation .shell{grid-template-columns:1fr}.pos-workspace{grid-template-columns:1fr}.table-cards{grid-template-columns:repeat(4,1fr)}}
 
+
+.pos-sale-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.pos-sale-mode{border:1px solid #dfe6ee;background:#fff;border-radius:9px;padding:10px;font-size:11px;font-weight:850;cursor:pointer}.pos-sale-mode.active{background:#1769e0;color:#fff;border-color:#1769e0}.current-order-tag{display:inline-flex;align-items:center;gap:6px;background:#eef5ff;color:#1769e0;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900}.table-card.selected{outline:2px solid #1769e0;border-color:#1769e0;background:#eef5ff}
+
 </style>
 <style id="mobile-quote-ux-v30">
 @media (max-width:720px){
@@ -2611,6 +2614,10 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
   function pdvPage(){
     const g=tessaroGestaoInit();
     const now=new Date();
+    let saleMode='Caixa';
+    let selectedTable=null;
+    let cart=[];
+    const openTableOrders=g.orders.filter(o=>o.channel==='Mesa'&&o.status!=='Finalizado'&&o.status!=='Cancelado');
     const products=(db.products||[]).filter(p=>!p.companyId||p.companyId===session.companyId).slice(0,12);
     const fallback=[
       {name:'X-Salada',price:23,icon:'🍔'},{name:'X-Bacon',price:26,icon:'🍔'},{name:'X-Tudo',price:30,icon:'🍔'},
@@ -2625,18 +2632,19 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
       </div>
       <div class="pos-workspace">
         <aside class="pos-panel">
-          <div class="pos-panel-head"><h2>Mesas / Comandas</h2><button class="btn secondary" style="padding:5px 8px;min-height:0">+</button></div>
+          <div class="pos-panel-head"><h2>Mesas / Comandas</h2><span class="current-order-tag" id="currentOrderTag">CAIXA</span></div>
           <div class="pos-panel-body">
             <div class="pos-search"><span>⌕</span><input placeholder="Buscar mesa"></div>
             <div class="table-cards">
-              ${Array.from({length:10},(_,i)=>`<button class="table-card ${i===1||i===4?'busy':'free'}"><strong>Mesa ${String(i+1).padStart(2,'0')}</strong><small>${i===1?'R$ 68,00':i===4?'R$ 42,00':'Livre'}</small></button>`).join('')}
+              ${Array.from({length:10},(_,i)=>{const n=i+1;const order=openTableOrders.find(o=>Number(o.table)===n);const total=order?(o=>o.items.reduce((a,x)=>a+Number(x.price||0)*Number(x.qty||1),0))(order):0;return `<button class="table-card ${order?'busy':'free'}" data-table="${n}"><strong>Mesa ${String(n).padStart(2,'0')}</strong><small>${order?money(total):'Livre'}</small></button>`}).join('')}
             </div>
-            <div class="pos-shortcuts"><span>F2 Nova venda</span><span>F3 Delivery</span><span>F4 Fixos</span></div>
+            <div class="pos-shortcuts"><span>Mesa: clique acima</span><span>Caixa: venda direta</span><span>Balcão: retirada</span></div>
           </div>
         </aside>
         <main class="pos-panel">
           <div class="pos-panel-head"><div><h2>Produtos</h2><small class="muted">Toque no item para adicionar</small></div><button class="btn primary" id="newQuickOrder">+ NOVO PEDIDO</button></div>
           <div class="pos-panel-body">
+            <div class="pos-sale-modes"><button class="pos-sale-mode active" data-mode="Caixa">🧾 Caixa</button><button class="pos-sale-mode" data-mode="Balcão">🛍️ Balcão</button><button class="pos-sale-mode" data-mode="Mesa">🍽️ Mesa</button></div>
             <div class="pos-search"><span>⌕</span><input id="barcodeInput" placeholder="Buscar produto ou ler código de barras" autocomplete="off"></div>
             <div class="pos-categories">
               ${['Todos','Lanches','Porções','Bebidas','Almoço','Janta','Adicionais'].map((c,i)=>`<button class="pos-category ${i===0?'active':''}">${c}</button>`).join('')}
@@ -2647,7 +2655,7 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
           </div>
         </main>
         <aside class="pos-panel">
-          <div class="pos-panel-head"><div><h2>Comanda atual</h2><small class="muted">Venda rápida</small></div><button class="btn secondary" style="padding:6px 9px;min-height:0">•••</button></div>
+          <div class="pos-panel-head"><div><h2>Comanda atual</h2><small class="muted" id="orderModeLabel">Caixa · venda direta</small></div><button class="btn secondary" style="padding:6px 9px;min-height:0">•••</button></div>
           <div class="pos-panel-body">
             <div class="order-list" id="posOrderList"><div class="order-empty"><div>🧾</div><strong>Nenhum item lançado</strong><span>Selecione um produto para iniciar a venda.</span></div></div>
             <div class="order-summary">
@@ -2662,13 +2670,26 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
         </aside>
       </div>
     `,'pdv');
-    const cart=[];
-    const renderCart=()=>{const box=document.querySelector('#posOrderList');const total=cart.reduce((a,x)=>a+x.price,0);box.innerHTML=cart.length?cart.map((x,i)=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid #edf1f5;padding:9px 2px;font-size:12px"><span>1× <strong>${esc(x.name)}</strong></span><span>${money(x.price)}</span></div>`).join(''):'<div class="order-empty"><div>🧾</div><strong>Nenhum item lançado</strong><span>Selecione um produto para iniciar a venda.</span></div>';document.querySelector('#posSubtotal').textContent=money(total);document.querySelector('#posTotal').textContent=money(total)};
-    document.querySelectorAll('.product-tile').forEach((b,i)=>b.onclick=()=>{cart.push(shown[i]);renderCart()});
+    const modeLabel=()=>saleMode==='Mesa'?(selectedTable?'Mesa '+String(selectedTable).padStart(2,'0'):'Mesa · selecione uma mesa'):saleMode+(saleMode==='Balcão'?' · retirada':' · venda direta');
+    const refreshMode=()=>{document.querySelectorAll('.pos-sale-mode').forEach(b=>b.classList.toggle('active',b.dataset.mode===saleMode));document.querySelector('#orderModeLabel').textContent=modeLabel();document.querySelector('#currentOrderTag').textContent=modeLabel().toUpperCase();document.querySelectorAll('.table-card').forEach(b=>b.classList.toggle('selected',saleMode==='Mesa'&&Number(b.dataset.table)===selectedTable))};
+    const loadTable=n=>{saleMode='Mesa';selectedTable=n;const order=openTableOrders.find(o=>Number(o.table)===n);cart=order?order.items.map(x=>({...x})):[];renderCart();refreshMode()};
+    const renderCart=()=>{const box=document.querySelector('#posOrderList');const total=cart.reduce((a,x)=>a+Number(x.price||0)*Number(x.qty||1),0);box.innerHTML=cart.length?cart.map(x=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid #edf1f5;padding:9px 2px;font-size:12px"><span>${x.qty||1}× <strong>${esc(x.name)}</strong></span><span>${money(Number(x.price||0)*Number(x.qty||1))}</span></div>`).join(''):'<div class="order-empty"><div>🧾</div><strong>Nenhum item lançado</strong><span>Selecione um produto para iniciar a venda.</span></div>';document.querySelector('#posSubtotal').textContent=money(total);document.querySelector('#posTotal').textContent=money(total)};
+    document.querySelectorAll('.product-tile').forEach((b,i)=>b.onclick=()=>{const p=shown[i];const existing=cart.find(x=>x.name===p.name&&Number(x.price||0)===Number(p.price||0));if(existing)existing.qty=(existing.qty||1)+1;else cart.push({...p,qty:1});renderCart()});
+    document.querySelectorAll('.table-card').forEach(b=>b.onclick=()=>loadTable(Number(b.dataset.table)));
+    document.querySelectorAll('.pos-sale-mode').forEach(b=>b.onclick=()=>{saleMode=b.dataset.mode;if(saleMode!=='Mesa'){selectedTable=null;cart=[];renderCart()}refreshMode()});
     document.querySelectorAll('.pos-category').forEach(b=>b.onclick=()=>{document.querySelectorAll('.pos-category').forEach(x=>x.classList.remove('active'));b.classList.add('active')});
+    document.querySelector('#newQuickOrder').onclick=()=>{cart=[];selectedTable=null;saleMode='Caixa';renderCart();refreshMode()};
+    const sendBtn=[...document.querySelectorAll('.order-actions button')].find(b=>b.textContent.includes('Enviar pedido'));
+    const finishBtn=[...document.querySelectorAll('.order-actions button')].find(b=>b.textContent.includes('FINALIZAR'));
+    const receiveBtn=[...document.querySelectorAll('.order-actions button')].find(b=>b.textContent.trim()==='Receber');
+    const persistOrder=(status)=>{if(!cart.length){alert('Adicione pelo menos um item ao pedido.');return null}if(saleMode==='Mesa'&&!selectedTable){alert('Selecione a mesa antes de lançar o pedido.');return null}let order=saleMode==='Mesa'?g.orders.find(o=>o.channel==='Mesa'&&Number(o.table)===selectedTable&&o.status!=='Finalizado'&&o.status!=='Cancelado'):null;if(order){order.items=cart.map(x=>({...x}));order.updatedAt=new Date().toISOString();order.status=status}else{order={id:uid('ord'),channel:saleMode,table:saleMode==='Mesa'?selectedTable:null,items:cart.map(x=>({...x})),status,createdAt:new Date().toISOString()};g.orders.push(order)}save();return order};
+    sendBtn.onclick=()=>{const o=persistOrder('Aberto');if(o){alert((saleMode==='Mesa'?'Pedido da Mesa '+selectedTable:'Pedido de '+saleMode)+' salvo.');pdvPage()}};
+    finishBtn.onclick=()=>{const o=persistOrder('Finalizado');if(o){alert('Venda de '+saleMode+' finalizada.');pdvPage()}};
+    receiveBtn.onclick=()=>{if(!cart.length)return alert('Adicione itens primeiro.');alert('Pagamento do pedido de '+modeLabel()+' será a próxima etapa do fluxo.')};
     document.querySelector('#openCash')?.addEventListener('click',()=>{const v=prompt('Valor inicial/troco do caixa:','0');if(v===null)return;g.cash={open:true,openedAt:new Date().toISOString(),openingAmount:Number(String(v).replace(',','.'))||0};save();pdvPage()});
     document.querySelector('#closeCash')?.addEventListener('click',()=>{const counted=prompt('Quanto dinheiro foi contado no caixa?','0');if(counted===null)return;g.cash={open:false,openedAt:null,openingAmount:0};save();pdvPage()});
     document.querySelector('#barcodeInput').onkeydown=e=>{if(e.key==='Enter'){alert('Código lido: '+e.target.value);e.target.value=''}};
+    refreshMode();
   }
   function deliveryPage(){
     const g=tessaroGestaoInit();
