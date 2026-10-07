@@ -1417,6 +1417,10 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
 /* PDV estilo fluxo por telas: pedidos > comanda > catálogo */
 .pdv-home{padding:18px}.pdv-home-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.pdv-home-actions{display:flex;gap:8px;flex-wrap:wrap}.pdv-order-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:11px}.pdv-order-card{background:#fff;border:1px solid #dce4ed;border-radius:12px;padding:15px;text-align:left;cursor:pointer;min-height:105px;display:flex;flex-direction:column;justify-content:space-between}.pdv-order-card:hover{border-color:#7aa9e7;box-shadow:0 7px 18px rgba(23,105,224,.08)}.pdv-order-card.busy{border-left:5px solid #f59e0b}.pdv-order-card.free{border-left:5px solid #22c55e}.pdv-order-card.quick{border-left:5px solid #1769e0}.pdv-order-card strong{font-size:14px}.pdv-order-card small{color:var(--muted)}.pdv-order-card b{font-size:17px;margin-top:8px}.pdv-comanda{max-width:1050px;margin:0 auto;padding:18px}.pdv-comanda-head{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff;border:1px solid #e1e7ef;border-radius:12px;padding:14px 16px;margin-bottom:12px}.pdv-comanda-actions{display:flex;gap:8px;flex-wrap:wrap}.pdv-items{background:#fff;border:1px solid #e1e7ef;border-radius:12px;overflow:hidden;min-height:300px}.pdv-item-row{display:grid;grid-template-columns:70px 1fr 110px 45px;align-items:center;gap:8px;padding:13px 15px;border-bottom:1px solid #edf1f5}.pdv-item-row:last-child{border-bottom:0}.pdv-item-row .qty{font-weight:900}.pdv-item-row .value{text-align:right;font-weight:800}.pdv-comanda-bottom{display:grid;grid-template-columns:1fr 330px;gap:12px;margin-top:12px}.pdv-note,.pdv-totalbox{background:#fff;border:1px solid #e1e7ef;border-radius:12px;padding:15px}.pdv-totalbox .big{display:flex;justify-content:space-between;font-size:22px;font-weight:950;margin:8px 0 15px}.catalog-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:4500;display:grid;place-items:center;padding:18px}.catalog-modal{background:#f5f7fa;width:min(1120px,98vw);height:min(760px,94vh);border-radius:15px;overflow:hidden;display:grid;grid-template-rows:auto 1fr;box-shadow:0 30px 90px rgba(0,0,0,.28)}.catalog-head{background:#fff;padding:13px 16px;border-bottom:1px solid #dfe5ec;display:flex;align-items:center;gap:12px}.catalog-head .pos-search{flex:1;margin:0}.catalog-body{display:grid;grid-template-columns:190px 1fr;min-height:0}.catalog-cats{background:#fff;border-right:1px solid #dfe5ec;padding:10px;overflow:auto}.catalog-cats button{display:block;width:100%;border:0;background:transparent;text-align:left;padding:12px;border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;margin-bottom:4px}.catalog-cats button.active{background:#1769e0;color:#fff}.catalog-products{padding:14px;overflow:auto}.catalog-products .product-grid{grid-template-columns:repeat(auto-fill,minmax(135px,1fr))}.catalog-footer-count{font-size:11px;color:var(--muted);white-space:nowrap}@media(max-width:760px){.pdv-comanda-bottom{grid-template-columns:1fr}.catalog-body{grid-template-columns:110px 1fr}.pdv-item-row{grid-template-columns:45px 1fr 80px 35px}.pdv-home-head{align-items:flex-start;flex-direction:column}}
 
+
+/* Pedido flutuante inspirado no fluxo operacional de balcão */
+.consumer-order-backdrop{position:fixed;inset:58px 0 0;background:rgba(15,23,42,.28);z-index:3000;display:flex;align-items:flex-start;justify-content:center;padding:20px}.consumer-order-modal{width:min(980px,94vw);height:min(690px,88vh);background:#f8fafc;border:1px solid #cfd7e2;box-shadow:0 22px 65px rgba(15,23,42,.3);display:grid;grid-template-columns:260px 1fr;position:relative}.consumer-order-left{background:#f4f6f8;border-right:1px solid #d9e0e8;padding:18px;display:flex;flex-direction:column}.consumer-order-left h3{font-size:14px;margin:0 0 12px}.consumer-status{background:#2776dc;color:#fff;font-weight:850;padding:11px;text-align:center;margin:-18px -18px 14px}.consumer-field{margin-bottom:9px}.consumer-field label{font-size:10px;color:#64748b;display:block;margin-bottom:3px}.consumer-field input,.consumer-field select,.consumer-field textarea{width:100%;border:1px solid #cfd7e2;background:#fff;padding:7px;font-size:11px}.consumer-side-actions{margin-top:auto;display:grid;gap:8px}.consumer-side-actions button{text-align:left;background:transparent;border:0;padding:7px;font-size:12px;cursor:pointer}.consumer-order-main{display:grid;grid-template-rows:auto 1fr auto;min-width:0}.consumer-order-toolbar{background:#fff;border-bottom:1px solid #d9e0e8;padding:10px 12px;display:flex;gap:8px;align-items:center}.consumer-order-toolbar .pos-search{flex:1;margin:0}.consumer-order-items{overflow:auto;background:#fff}.consumer-order-table-head,.consumer-order-item{display:grid;grid-template-columns:1fr 105px 36px;gap:8px;align-items:center;padding:11px 14px;border-bottom:1px solid #e6ebf0;font-size:12px}.consumer-order-table-head{background:#f7f9fb;font-size:10px;font-weight:850;color:#64748b}.consumer-order-item b{text-align:right}.consumer-order-summary{padding:10px 14px;background:#fff;border-top:1px solid #d9e0e8}.consumer-order-summary>div{display:flex;justify-content:flex-end;gap:30px;font-size:12px;padding:3px}.consumer-order-summary .grand{font-size:15px;font-weight:950}.consumer-order-footer{height:62px;border-top:1px solid #d9e0e8;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;padding:8px 14px}.consumer-order-footer button{min-width:125px}.consumer-close-x{position:absolute;right:-1px;top:-34px;width:34px;height:34px;border:0;background:#ef4444;color:#fff;font-weight:900;cursor:pointer}.product-pick-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.2);z-index:5200;display:grid;place-items:center}.product-pick{width:min(430px,92vw);background:#fff;border:1px solid #cfd7e2;box-shadow:0 18px 55px rgba(0,0,0,.3);padding:18px}.product-pick h3{font-size:14px;margin-bottom:18px}.product-pick .pick-row{display:flex;align-items:center;justify-content:center;gap:13px;margin:18px 0}.product-pick .pick-row button{width:30px;height:30px;border-radius:50%;border:0;background:#38a9e8;color:#fff;font-size:20px}.product-pick .pick-row input{width:80px;text-align:center;padding:8px}.product-pick-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}@media(max-width:720px){.consumer-order-backdrop{inset:58px 0 0;padding:5px}.consumer-order-modal{grid-template-columns:1fr;height:calc(100vh - 68px);width:100%;overflow:auto}.consumer-order-left{min-height:260px}.consumer-order-main{min-height:500px}}
+
 </style>
 <style id="mobile-quote-ux-v30">
 @media (max-width:720px){
@@ -2523,147 +2527,94 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
                   <button data-page="purchasesHub" class="${['purchasesHub','quotations','orders','suppliers','categories','units','products','history','purchaseIntelligence'].includes(active)?'active':''}"><i class="nav-icon">▤</i>Compras / Cotações <kbd>F7</kbd></button>
                   <button data-page="recebimentos" class="${active==='recebimentos'?'active':''}"><i class="nav-icon">✓</i>Recebimentos <kbd>F8</kbd></button>
                   <button data-page="estoque" class="${active==='estoque'?'active':''}"><i class="nav-icon">▦</i>Estoque <kbd>F9</kbd></button>
-                  <button data-page="carnes" class="${active==='carnes'?'active':''}"><i class="nav-icon">♨</i>Carnes <kbd>F10</kbd></button>
-                  <button data-page="relatorios" class="${active==='relatorios'?'active':''}"><i class="nav-icon">▤</i>Relatórios <kbd>F11</kbd></button>
-                  <button data-page="companySettings" class="${active==='companySettings'?'active':''}"><i class="nav-icon">⚙</i>Configurações <kbd>F12</kbd></button>
-                  <button id="installAppBtn" type="button"><i class="nav-icon">⬇</i>Instalar aplicativo</button>
-                `}
-              `}
-            </nav>
-            <div class="spacer"></div>
-            <div class="sidebar-profile">
-              ${!master && !representativeMode && company?.logo
-                ? `<img class="top-company-logo" src="${company.logo}" alt="Logo">`
-                : `<div class="avatar">${initial}</div>`}
-              <div class="profile-copy">
-                <strong>${esc(profileName)}</strong>
-                <span>${esc(profileSub)}</span>
-              </div>
-              <button id="logoutBtn" title="Sair" style="margin-left:auto;padding:7px;background:transparent;color:#fff">⇥</button>
-            </div>
-          </aside>
-          ${representativeMode ? `
-            <nav class="mobile-bottom-nav">
-              <button data-page="repDashboard" class="${active==='repDashboard'?'active':''}"><i>⌂</i><span>Dashboard</span></button>
-              <button data-page="repQuotations" class="${active==='repQuotations'?'active':''}"><i>▤</i><span>Cotações</span></button>
-              <button data-page="repOrders" class="${active==='repOrders'?'active':''}"><i>▦</i><span>Pedidos</span></button>
-              <button data-page="repClients" class="${active==='repClients'?'active':''}"><i>♧</i><span>Clientes</span></button>
-              <button data-page="repPaymentConditions" class="${active==='repPaymentConditions'?'active':''}"><i>$</i><span>Condições</span></button>
-            </nav>
-          ` : ''}
-          ${operationMode ? `
-            <nav class="operation-topnav">
-              <div class="op-brand"><span>🍔</span>TESSARO PDV</div>
-              <button data-page="pdv" class="${active==='pdv'?'active':''}">🧾 PDV <kbd>F2</kbd></button>
-              <button data-page="delivery" class="${active==='delivery'?'active':''}">🛵 Delivery <kbd>F3</kbd></button>
-              <button data-page="pedidosFixos" class="${active==='pedidosFixos'?'active':''}">✓ Clientes Fixos <kbd>F4</kbd></button>
-              <button data-page="fiados" class="${active==='fiados'?'active':''}">💲 Fiados <kbd>F5</kbd></button>
-              <button id="operationAreaChooser" class="exit-area">⇆ Sair desta área</button>
-            </nav>
-          ` : ''}
-          <main class="content">${(!master && !representativeMode && ['quotations','orders','suppliers','categories','units','products','history','purchaseIntelligence'].includes(active)) ? `<button class="context-back-btn" id="backToPurchasesHub">← Voltar para Pesquisa de preços</button>` : ''}${content}</main>
-        </div>
-      </div>
-    `);
-
-
-    enhanceRepresentativeMobileTables();
-    bindMoneyMasks();
-
-    document.querySelector('#logoutBtn').onclick = logoutOnline;
-
-    const clientApp=document.querySelector('.client-app');
-    const clientMenuToggle=document.querySelector('#clientMenuToggle');
-    const clientMenuOverlay=document.querySelector('#clien  function pdvPage(){
-    const g=tessaroGestaoInit(), now=new Date();
-    const isOpen=o=>o.status!=='Finalizado'&&o.status!=='Cancelado';
-    const openOrders=g.orders.filter(isOpen);
+                  <button data-page="carnes" class="${active==='carnes'?'active':''}"><i clas  function pdvPage(){
+    const g=tessaroGestaoInit(),now=new Date(),isOpen=o=>o.status!=='Finalizado'&&o.status!=='Cancelado',openOrders=g.orders.filter(isOpen);
     const products=(db.products||[]).filter(p=>!p.companyId||p.companyId===session.companyId);
-    const fallback=[
-      {name:'X-Salada',price:23,icon:'🍔',category:'Lanches'},{name:'X-Bacon',price:26,icon:'🍔',category:'Lanches'},{name:'X-Tudo',price:30,icon:'🍔',category:'Lanches'},
-      {name:'Batata 500g',price:22,icon:'🍟',category:'Porções'},{name:'Porção',price:53,icon:'🍽️',category:'Porções'},{name:'Refrigerante Lata',price:0,icon:'🥤',category:'Bebidas'},
-      {name:'Refrigerante 2L',price:17,icon:'🥤',category:'Bebidas'},{name:'Marmita Normal',price:28,icon:'🍱',category:'Almoço'},{name:'Marmita Meia',price:20,icon:'🍱',category:'Almoço'}
-    ];
+    const fallback=[{name:'X-Salada',price:23,icon:'🍔',category:'Lanches'},{name:'X-Bacon',price:26,icon:'🍔',category:'Lanches'},{name:'X-Tudo',price:30,icon:'🍔',category:'Lanches'},{name:'Batata 500g',price:22,icon:'🍟',category:'Porções'},{name:'Porção',price:53,icon:'🍽️',category:'Porções'},{name:'Refrigerante Lata',price:6,icon:'🥤',category:'Bebidas'},{name:'Refrigerante 2L',price:17,icon:'🥤',category:'Bebidas'},{name:'Marmita Normal',price:28,icon:'🍱',category:'Almoço'},{name:'Marmita Meia',price:20,icon:'🍱',category:'Almoço'}];
     const shown=products.length?products.map(p=>({id:p.id,name:p.name,price:Number(p.price||p.salePrice||0),icon:'•',category:p.category||p.categoryName||'Outros'})):fallback;
     let saleMode=null,selectedTable=null,currentOrder=null,cart=[];
-    const totalCart=()=>cart.reduce((a,x)=>a+Number(x.price||0)*Number(x.qty||1),0);
-    const modeLabel=()=>saleMode==='Mesa'?'Mesa '+String(selectedTable).padStart(2,'0'):saleMode==='Balcão'?'Balcão / Retirada':'Caixa / Venda direta';
+    const total=()=>cart.reduce((a,x)=>a+Number(x.price||0)*Number(x.qty||1),0);
+    const orderTitle=()=>saleMode==='Mesa'?'Mesa '+String(selectedTable).padStart(2,'0'):saleMode==='Balcão'?'Pedido Balcão':'Pedido Caixa';
 
-    const renderHome=()=>{layout(`
-      <div class="pos-topbar"><div class="pos-title"><div style="font-size:27px">🍔</div><div><h1>TESSARO PDV</h1><small>Pedidos e comandas em andamento</small></div></div><div class="pos-live"><span>Operador: <strong>Caixa</strong></span><span>${now.toLocaleDateString('pt-BR')} · ${now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span><span class="status">${g.cash.open?'● CAIXA ABERTO':'○ CAIXA FECHADO'}</span></div></div>
-      <section class="pdv-home">
-        <div class="pdv-home-head"><div><h2>Mesas e pedidos</h2><p class="muted">Abra uma mesa ou inicie um novo pedido.</p></div><div class="pdv-home-actions"><button class="btn primary" data-new-channel="Caixa">+ Venda Caixa</button><button class="btn secondary" data-new-channel="Balcão">+ Pedido Balcão</button>${g.cash.open?'<button class="btn danger" id="closeCash">Fechar caixa</button>':'<button class="btn success" id="openCash">Abrir caixa</button>'}</div></div>
-        <h3 style="margin:8px 0 10px">Mesas</h3>
-        <div class="pdv-order-grid">${Array.from({length:10},(_,i)=>{const n=i+1,o=openOrders.find(x=>x.channel==='Mesa'&&Number(x.table)===n),t=o?(o.items||[]).reduce((a,x)=>a+Number(x.price||0)*Number(x.qty||1),0):0;return `<button class="pdv-order-card ${o?'busy':'free'}" data-table="${n}"><div><strong>🍽️ Mesa ${String(n).padStart(2,'0')}</strong><small style="display:block;margin-top:5px">${o?'Comanda aberta':'Livre'}</small></div><b>${o?money(t):'Abrir mesa'}</b></button>`}).join('')}</div>
-        <h3 style="margin:22px 0 10px">Caixa / Balcão em andamento</h3>
-        <div class="pdv-order-grid" id="quickOrders">${openOrders.filter(o=>o.channel==='Caixa'||o.channel==='Balcão').length?openOrders.filter(o=>o.channel==='Caixa'||o.channel==='Balcão').map(o=>`<button class="pdv-order-card quick" data-open-order="${o.id}"><div><strong>${o.channel==='Balcão'?'🛍️':'🧾'} ${esc(o.channel)}</strong><small style="display:block;margin-top:5px">${o.createdAt?new Date(o.createdAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'Pedido aberto'}</small></div><b>${money((o.items||[]).reduce((a,x)=>a+Number(x.price||0)*Number(x.qty||1),0))}</b></button>`).join(''):'<div class="muted" style="padding:12px">Nenhum pedido de Caixa ou Balcão em andamento.</div>'}</div>
-      </section>`,'pdv');
-      document.querySelectorAll('[data-table]').forEach(b=>b.onclick=()=>openComanda('Mesa',Number(b.dataset.table)));
-      document.querySelectorAll('[data-new-channel]').forEach(b=>b.onclick=()=>openComanda(b.dataset.newChannel));
-      document.querySelectorAll('[data-open-order]').forEach(b=>{b.onclick=()=>{const o=g.orders.find(x=>x.id===b.dataset.openOrder);if(o)openComanda(o.channel,o.table||null,o)}});
-      document.querySelector('#openCash')?.addEventListener('click',()=>{const v=prompt('Valor inicial/troco do caixa:','0');if(v===null)return;g.cash={open:true,openedAt:new Date().toISOString(),openingAmount:Number(String(v).replace(',','.'))||0};save();pdvPage()});
-      document.querySelector('#closeCash')?.addEventListener('click',()=>{const counted=prompt('Quanto dinheiro foi contado no caixa?','0');if(counted===null)return;g.cash={open:false,openedAt:null,openingAmount:0};save();pdvPage()});
-    };
+    layout(`<div class="pos-topbar"><div class="pos-title"><div style="font-size:27px">🍔</div><div><h1>TESSARO PDV</h1><small>Pedidos em andamento (${openOrders.length})</small></div></div><div class="pos-live"><span>Operador: <strong>LUCIANO</strong></span><span>${now.toLocaleDateString('pt-BR')} · ${now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span><span class="status">${g.cash.open?'● CAIXA ABERTO':'○ CAIXA FECHADO'}</span></div></div>
+    <section class="pdv-home"><div class="pdv-home-head"><div><h2>Pedidos em andamento</h2><p class="muted">Mesas livres e comandas abertas.</p></div><div class="pdv-home-actions"><button class="btn primary" data-new-channel="Caixa">+ Pedido Caixa</button><button class="btn secondary" data-new-channel="Balcão">+ Pedido Balcão</button>${g.cash.open?'<button class="btn danger" id="closeCash">Fechar caixa</button>':'<button class="btn success" id="openCash">Abrir caixa</button>'}</div></div>
+    <div class="pdv-order-grid">${openOrders.filter(o=>o.channel!=='Mesa').map(o=>`<button class="pdv-order-card quick" data-open-order="${o.id}"><div><strong>${o.channel==='Balcão'?'🛍️':'🧾'} ${esc(o.channel)}</strong><small style="display:block;margin-top:5px">Pedido ${esc(String(o.number||o.id).slice(-6))}</small></div><b>${money((o.items||[]).reduce((a,x)=>a+Number(x.price||0)*Number(x.qty||1),0))}</b></button>`).join('')}</div>
+    <h3 style="margin:22px 0 10px">Mesas Livres / Em uso</h3><div class="pdv-order-grid">${Array.from({length:22},(_,i)=>{const n=i+1,o=openOrders.find(x=>x.channel==='Mesa'&&Number(x.table)===n),t=o?(o.items||[]).reduce((a,x)=>a+Number(x.price||0)*Number(x.qty||1),0):0;return `<button class="pdv-order-card ${o?'busy':'free'}" data-table="${n}"><div><strong>MESA ${String(n).padStart(2,'0')}</strong><small style="display:block">${o?'EM USO':'LIVRE'}</small></div><b>${o?money(t):'Abrir'}</b></button>`}).join('')}</div></section>`,'pdv');
 
-    const openComanda=(mode,table=null,order=null)=>{
-      saleMode=mode;selectedTable=table;
-      currentOrder=order||(mode==='Mesa'?openOrders.find(o=>o.channel==='Mesa'&&Number(o.table)===Number(table)):null)||null;
-      cart=currentOrder?(currentOrder.items||[]).map(x=>({...x})):[];
-      renderComanda();
-    };
+    const openOrder=(mode,table=null,o=null)=>{saleMode=mode;selectedTable=table;currentOrder=o||(mode==='Mesa'?g.orders.find(x=>x.channel==='Mesa'&&Number(x.table)===Number(table)&&isOpen(x)):null)||null;cart=currentOrder?(currentOrder.items||[]).map(x=>({...x})):[];showOrderModal()};
+    document.querySelectorAll('[data-table]').forEach(b=>b.onclick=()=>openOrder('Mesa',Number(b.dataset.table)));
+    document.querySelectorAll('[data-new-channel]').forEach(b=>b.onclick=()=>openOrder(b.dataset.newChannel));
+    document.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>{const o=g.orders.find(x=>x.id===b.dataset.openOrder);if(o)openOrder(o.channel,o.table||null,o)});
+    document.querySelector('#openCash')?.addEventListener('click',()=>{const v=prompt('Valor inicial/troco do caixa:','0');if(v===null)return;g.cash={open:true,openedAt:new Date().toISOString(),openingAmount:Number(String(v).replace(',','.'))||0};save();pdvPage()});
+    document.querySelector('#closeCash')?.addEventListener('click',()=>{const v=prompt('Quanto dinheiro foi contado no caixa?','0');if(v===null)return;g.cash={open:false,openedAt:null,openingAmount:0};save();pdvPage()});
 
-    const renderComanda=()=>{layout(`
-      <div class="pos-topbar"><div class="pos-title"><div style="font-size:27px">🧾</div><div><h1>${esc(modeLabel())}</h1><small>Comanda aberta · ${currentOrder?'Pedido existente':'Novo pedido'}</small></div></div><div class="pos-live"><span>${now.toLocaleDateString('pt-BR')} · ${now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span><span class="status">● EM ATENDIMENTO</span></div></div>
-      <section class="pdv-comanda">
-        <div class="pdv-comanda-head"><div><strong style="font-size:17px">${esc(modeLabel())}</strong><div class="muted" style="font-size:11px">Itens lançados na comanda</div></div><div class="pdv-comanda-actions"><button class="btn secondary" id="backOrders">← Pedidos</button><button class="btn primary" id="addProducts">＋ ADICIONAR PRODUTOS</button></div></div>
-        <div class="pdv-items" id="pdvItems"></div>
-        <div class="pdv-comanda-bottom"><div class="pdv-note"><label>Observação do pedido<textarea id="orderNote" rows="3" placeholder="Ex.: sem cebola, retirar no balcão...">${esc(currentOrder?.note||'')}</textarea></label></div><div class="pdv-totalbox"><span class="muted">Total da comanda</span><div class="big"><span>Total</span><span id="comandaTotal">${money(totalCart())}</span></div><div style="display:grid;gap:7px"><button class="btn secondary" id="sendOrder">Salvar / Enviar pedido</button><button class="btn primary" id="receiveOrder">RECEBER / PAGAR</button></div></div></div>
-      </section>`,'pdv');
-      const renderItems=()=>{const box=document.querySelector('#pdvItems');box.innerHTML=cart.length?cart.map((x,i)=>`<div class="pdv-item-row"><span class="qty">${x.qty||1}×</span><div><strong>${esc(x.name)}</strong><small class="muted" style="display:block">${money(Number(x.price||0))} un.</small></div><span class="value">${money(Number(x.price||0)*Number(x.qty||1))}</span><button class="btn danger" data-remove-item="${i}" style="min-height:0;padding:5px 8px">×</button></div>`).join(''):'<div class="order-empty" style="padding:70px 20px"><div>🧾</div><strong>Comanda vazia</strong><span>Clique em “Adicionar produtos” para lançar os itens.</span></div>';document.querySelector('#comandaTotal').textContent=money(totalCart());document.querySelectorAll('[data-remove-item]').forEach(b=>b.onclick=()=>{cart.splice(Number(b.dataset.removeItem),1);renderItems()})};
-      const persistOrder=(status)=>{if(!cart.length){alert('Adicione pelo menos um item ao pedido.');return null}let o=currentOrder||(saleMode==='Mesa'?g.orders.find(x=>x.channel==='Mesa'&&Number(x.table)===Number(selectedTable)&&isOpen(x)):null);if(o){o.items=cart.map(x=>({...x}));o.note=document.querySelector('#orderNote')?.value||'';o.updatedAt=new Date().toISOString();o.status=status}else{o={id:uid('ord'),channel:saleMode,table:saleMode==='Mesa'?selectedTable:null,items:cart.map(x=>({...x})),note:document.querySelector('#orderNote')?.value||'',status,createdAt:new Date().toISOString()};g.orders.push(o);currentOrder=o}save();return o};
-      document.querySelector('#backOrders').onclick=()=>{if(cart.length&&!currentOrder&&!confirm('Voltar sem salvar este novo pedido?'))return;pdvPage()};
-      document.querySelector('#addProducts').onclick=()=>openCatalog(renderItems);
-      document.querySelector('#sendOrder').onclick=()=>{const o=persistOrder('Aberto');if(o){alert('Pedido salvo.');pdvPage()}};
-      const receiveBtn=document.querySelector('#receiveOrder');
-      const openPayment=()=>{
-        if(!cart.length)return alert('Adicione itens primeiro.');
-        if(saleMode==='Mesa'&&!selectedTable)return alert('Selecione a mesa.');
-        const total=cart.reduce((a,x)=>a+Number(x.price||0)*Number(x.qty||1),0);
-        let method='Dinheiro',payments=[];
-        const wrap=document.createElement('div');wrap.className='pay-modal-backdrop';
-        wrap.innerHTML=`<div class="pay-modal"><div class="pay-head"><div><strong>Receber pedido</strong><div class="muted" style="font-size:11px">${esc(modeLabel())}</div></div><button class="btn secondary" id="payClose">✕</button></div><div class="pay-body"><div class="pay-total"><span>Total da venda</span><strong>${money(total)}</strong></div><div class="pay-methods">${['Dinheiro','PIX','Débito','Crédito','Fiado'].map((m,i)=>`<button class="pay-method ${i===0?'active':''}" data-pay-method="${m}">${m}</button>`).join('')}</div><div class="pay-entry"><label>Forma selecionada<input id="payMethodDisplay" value="Dinheiro" readonly></label><label>Valor<input id="payAmount" inputmode="decimal" value="${total.toFixed(2).replace('.',',')}"></label><button class="btn primary" id="payAdd">Adicionar</button></div><div id="fiadoCustomerBox" class="hidden" style="margin-top:10px"><label>Cliente do fiado<select id="payFiadoCustomer"><option value="">Selecione...</option>${ensureFiadosData().customers.map(c=>`<option value="${c.id}">${esc(c.name||c.nome||'Cliente')}</option>`).join('')}</select></label><button class="btn secondary" id="payNewCustomer" style="margin-top:6px">+ Cadastrar cliente</button></div><div class="pay-lines" id="payLines"></div><div class="pay-balance"><span>Falta receber</span><strong id="payRemaining">${money(total)}</strong></div><div id="cashChange" class="notice success hidden"></div></div><div class="pay-footer"><button class="btn secondary" id="payCancel">Cancelar</button><button class="btn success" id="payConfirm" disabled>Confirmar pagamento</button></div></div>`;
-        document.body.appendChild(wrap);
-        const renderPayments=()=>{const paid=payments.reduce((a,p)=>a+p.amount,0);const remaining=Math.max(0,total-paid);wrap.querySelector('#payLines').innerHTML=payments.map((p,i)=>`<div class="pay-line"><span><strong>${p.method}</strong>${p.customerName?' · '+esc(p.customerName):''}</span><strong>${money(p.amount)}</strong><button class="btn danger" data-rm-pay="${i}" style="min-height:0;padding:4px 7px">×</button></div>`).join('');wrap.querySelector('#payRemaining').textContent=money(remaining);wrap.querySelector('#payRemaining').classList.toggle('ok',remaining<.005);wrap.querySelector('#payConfirm').disabled=remaining>=.005;wrap.querySelectorAll('[data-rm-pay]').forEach(b=>b.onclick=()=>{payments.splice(Number(b.dataset.rmPay),1);renderPayments()});if(remaining>0)wrap.querySelector('#payAmount').value=remaining.toFixed(2).replace('.',',')};
-        wrap.querySelectorAll('[data-pay-method]').forEach(b=>b.onclick=()=>{method=b.dataset.payMethod;wrap.querySelectorAll('[data-pay-method]').forEach(x=>x.classList.toggle('active',x===b));wrap.querySelector('#payMethodDisplay').value=method;wrap.querySelector('#fiadoCustomerBox').classList.toggle('hidden',method!=='Fiado')});
-        wrap.querySelector('#payNewCustomer').onclick=()=>{const name=prompt('Nome do cliente');if(!name)return;const data=ensureFiadosData();const c={id:uid('cli'),name,createdAt:new Date().toISOString()};data.customers.push(c);save();const opt=document.createElement('option');opt.value=c.id;opt.textContent=name;opt.selected=true;wrap.querySelector('#payFiadoCustomer').appendChild(opt)};
-        wrap.querySelector('#payAdd').onclick=()=>{const paid=payments.reduce((a,p)=>a+p.amount,0),remaining=Math.max(0,total-paid);let amount=Number(String(wrap.querySelector('#payAmount').value).replace('.','').replace(',','.'))||0;if(amount<=0)return alert('Informe o valor.');let customerId='',customerName='';if(method==='Fiado'){customerId=wrap.querySelector('#payFiadoCustomer').value;if(!customerId)return alert('Selecione o cliente do fiado.');const c=ensureFiadosData().customers.find(x=>x.id===customerId);customerName=c?.name||'Cliente'}if(method!=='Dinheiro'&&amount>remaining+.005)return alert('O valor é maior que o saldo restante.');let change=0;if(method==='Dinheiro'&&amount>remaining){change=amount-remaining;amount=remaining;const ch=wrap.querySelector('#cashChange');ch.textContent='Troco: '+money(change);ch.classList.remove('hidden')}payments.push({method,amount,customerId,customerName,change});renderPayments()};
-        const close=()=>wrap.remove();wrap.querySelector('#payClose').onclick=close;wrap.querySelector('#payCancel').onclick=close;
-        wrap.querySelector('#payConfirm').onclick=()=>{const paid=payments.reduce((a,p)=>a+p.amount,0);if(Math.abs(paid-total)>.005)return alert('O pagamento ainda não fecha com o total.');
-          const order=persistOrder('Finalizado');if(!order)return;order.payments=payments.map(p=>({...p}));order.paidAt=new Date().toISOString();order.total=total;
-          for(const p of payments){
-            if(p.method==='Dinheiro')fin2AddMovement({accountId:'cash',direction:'in',amount:p.amount,category:'Vendas',description:'Venda PDV '+saleMode,source:'pdv:'+order.id});
-            else if(p.method==='PIX')fin2AddMovement({accountId:'sicredi',direction:'in',amount:p.amount,category:'Vendas',description:'Venda PIX PDV '+saleMode,source:'pdv:'+order.id});
-            else if(p.method==='Débito'||p.method==='Crédito'){fin2State.receivables.unshift({id:fin2Uid('rec'),date:fin2Today(),dueDate:fin2Today(),description:'Venda '+p.method+' PDV '+saleMode,amount:p.amount,status:'open',source:'pdv_card',orderId:order.id,paymentMethod:p.method,createdAt:new Date().toISOString()});fin2Save()}
-            else if(p.method==='Fiado'){ensureFiadosData().transactions.push({id:uid('tx'),customerId:p.customerId,type:'charge',amount:p.amount,date:todayISO(),description:'Venda PDV '+saleMode,source:'pdv_fiado',orderId:order.id,createdAt:new Date().toISOString()})}
-          }
-          save();close();alert('Pagamento confirmado e venda finalizada.');pdvPage();
-        };
-        renderPayments();
-      };
-      receiveBtn.onclick=openPayment;
-      renderItems();
-    };
-
-    const openCatalog=(afterAdd)=>{
-      let category='Todos',query='';
-      const cats=['Todos','Lanches','Porções','Bebidas','Almoço','Janta','Adicionais','Outros'];
-      const wrap=document.createElement('div');wrap.className='catalog-backdrop';
-      wrap.innerHTML=`<div class="catalog-modal"><div class="catalog-head"><button class="btn secondary" id="catalogClose">← Voltar à comanda</button><div class="pos-search"><span>⌕</span><input id="catalogSearch" placeholder="Buscar produto ou código de barras" autocomplete="off"></div><span class="catalog-footer-count" id="catalogCount"></span></div><div class="catalog-body"><aside class="catalog-cats">${cats.map((c,i)=>`<button data-cat="${c}" class="${i===0?'active':''}">${c}</button>`).join('')}</aside><main class="catalog-products"><div class="product-grid" id="catalogGrid"></div></main></div></div>`;
+    function showOrderModal(){
+      document.querySelector('.consumer-order-backdrop')?.remove();
+      const wrap=document.createElement('div');wrap.className='consumer-order-backdrop';
+      wrap.innerHTML=`<div class="consumer-order-modal"><button class="consumer-close-x" id="orderX">×</button>
+        <aside class="consumer-order-left"><div class="consumer-status">Em Aberto</div><h3>${esc(orderTitle())} <span style="float:right">#${esc(String(currentOrder?.number||currentOrder?.id||'NOVO').slice(-7))}</span></h3>
+          <div class="consumer-field"><label>Iniciado em</label><input value="${currentOrder?.createdAt?new Date(currentOrder.createdAt).toLocaleString('pt-BR'):new Date().toLocaleString('pt-BR')}" readonly></div>
+          <div class="consumer-field"><label>Criado por</label><select><option>LUCIANO</option></select></div>
+          <div class="consumer-field"><label>Cliente</label><input id="orderCustomer" value="${esc(currentOrder?.customer||'')}" placeholder="Nenhum cliente vinculado" readonly></div>
+          <div class="consumer-field"><label>Anotar observação...</label><textarea id="orderNote" rows="3">${esc(currentOrder?.note||'')}</textarea></div>
+          <label style="font-size:11px"><input type="checkbox" id="blockOrder" ${currentOrder?.blocked?'checked':''}> Bloquear Pedido</label>
+          <div class="consumer-side-actions"><button id="linkCustomer">◉ Vincular Cliente</button><button id="moreOrder">☰ Mais Opções</button><button id="orderBack">‹ Voltar</button></div>
+        </aside>
+        <section class="consumer-order-main"><div class="consumer-order-toolbar"><div class="pos-search"><span>⌕</span><input id="quickProductSearch" placeholder="Buscar Produto..."></div><button class="btn secondary" id="openProducts">＋ Produtos</button></div>
+          <div class="consumer-order-items"><div class="consumer-order-table-head"><span>Itens do pedido (${cart.length})</span><span style="text-align:right">Valor</span><span></span></div><div id="consumerItems"></div></div>
+          <div><div class="consumer-order-summary"><div><span>SUBTOTAL:</span><b id="orderSubtotal">${money(total())}</b></div><div class="grand"><span>TOTAL:</span><b id="orderTotal">${money(total())}</b></div></div>
+          <div class="consumer-order-footer"><button class="btn secondary" id="printOrder">🖨 Imprimir</button><button class="btn primary" id="receiveOrder">💵 PAGAMENTO</button></div></div>
+        </section></div>`;
       document.body.appendChild(wrap);
-      const draw=()=>{const filtered=shown.filter(p=>(category==='Todos'||String(p.category||'Outros').toLowerCase()===category.toLowerCase())&&(!query||String(p.name).toLowerCase().includes(query.toLowerCase())));wrap.querySelector('#catalogGrid').innerHTML=filtered.length?filtered.map((p,i)=>`<button class="product-tile" data-catalog-i="${shown.indexOf(p)}"><div class="picon">${p.icon}</div><strong>${esc(p.name)}</strong><b>${p.price?money(p.price):'Consultar'}</b></button>`).join(''):'<div class="muted">Nenhum produto nesta categoria.</div>';wrap.querySelector('#catalogCount').textContent=filtered.length+' produto(s)';wrap.querySelectorAll('[data-catalog-i]').forEach(b=>b.onclick=()=>{const p=shown[Number(b.dataset.catalogI)],x=cart.find(y=>y.name===p.name&&Number(y.price||0)===Number(p.price||0));if(x)x.qty=(x.qty||1)+1;else cart.push({...p,qty:1});afterAdd();draw()})};
-      wrap.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{category=b.dataset.cat;wrap.querySelectorAll('[data-cat]').forEach(x=>x.classList.toggle('active',x===b));draw()});
-      wrap.querySelector('#catalogSearch').oninput=e=>{query=e.target.value;draw()};
-      wrap.querySelector('#catalogSearch').onkeydown=e=>{if(e.key==='Enter'){const exact=shown.find(p=>String(p.barcode||'')===e.target.value.trim());if(exact){const x=cart.find(y=>y.name===exact.name&&Number(y.price||0)===Number(exact.price||0));if(x)x.qty=(x.qty||1)+1;else cart.push({...exact,qty:1});afterAdd();e.target.value='';query='';draw()}}};
+      const draw=()=>{wrap.querySelector('#consumerItems').innerHTML=cart.length?cart.map((x,i)=>`<div class="consumer-order-item"><span><strong>${x.qty||1} × ${esc(x.name)}</strong></span><b>${money(Number(x.price||0)*Number(x.qty||1))}</b><button class="btn secondary" data-item-more="${i}" style="padding:3px;min-height:0">•••</button></div>`).join(''):'<div class="order-empty" style="padding:100px 20px"><strong>Nenhum item lançado.</strong></div>';wrap.querySelector('#orderSubtotal').textContent=money(total());wrap.querySelector('#orderTotal').textContent=money(total())};
+      const persistOrder=(status='Aberto')=>{if(!cart.length){alert('Adicione pelo menos um item.');return null}let o=currentOrder||(saleMode==='Mesa'?g.orders.find(x=>x.channel==='Mesa'&&Number(x.table)===Number(selectedTable)&&isOpen(x)):null);if(o){o.items=cart.map(x=>({...x}));o.note=wrap.querySelector('#orderNote').value;o.customer=wrap.querySelector('#orderCustomer').value;o.blocked=wrap.querySelector('#blockOrder').checked;o.status=status;o.updatedAt=new Date().toISOString()}else{o={id:uid('ord'),number:String(Date.now()).slice(-6),channel:saleMode,table:saleMode==='Mesa'?selectedTable:null,items:cart.map(x=>({...x})),note:wrap.querySelector('#orderNote').value,customer:wrap.querySelector('#orderCustomer').value,blocked:wrap.querySelector('#blockOrder').checked,status,createdAt:new Date().toISOString()};g.orders.push(o);currentOrder=o}save();return o};
+      const closeSave=()=>{if(cart.length)persistOrder('Aberto');wrap.remove();pdvPage()};
+      wrap.querySelector('#orderX').onclick=closeSave;wrap.querySelector('#orderBack').onclick=closeSave;
+      wrap.querySelector('#openProducts').onclick=()=>openCatalog();
+      wrap.querySelector('#quickProductSearch').onkeydown=e=>{if(e.key==='Enter'){const q=e.target.value.trim().toLowerCase(),p=shown.find(x=>x.name.toLowerCase().includes(q));if(p)openProductPick(p);else alert('Produto não encontrado.')}};
+      wrap.querySelector('#linkCustomer').onclick=()=>{const name=prompt('Nome do cliente',wrap.querySelector('#orderCustomer').value);if(name!==null)wrap.querySelector('#orderCustomer').value=name};
+      wrap.querySelector('#moreOrder').onclick=()=>alert('Aqui entraremos com cancelar pedido, transferir mesa, desconto e outras opções.');
+      wrap.querySelector('#printOrder').onclick=()=>{persistOrder('Aberto');window.print()};
+      wrap.querySelectorAll('[data-item-more]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.itemMore);if(confirm('Remover '+cart[i].name+' do pedido?')){cart.splice(i,1);showOrderModal()}});
+      const receiveBtn=wrap.querySelector('#receiveOrder');
+        const openPayment=()=>{
+          if(!cart.length)return alert('Adicione itens primeiro.');
+          if(saleMode==='Mesa'&&!selectedTable)return alert('Selecione a mesa.');
+          const total=cart.reduce((a,x)=>a+Number(x.price||0)*Number(x.qty||1),0);
+          let method='Dinheiro',payments=[];
+          const wrap=document.createElement('div');wrap.className='pay-modal-backdrop';
+          wrap.innerHTML=`<div class="pay-modal"><div class="pay-head"><div><strong>Receber pedido</strong><div class="muted" style="font-size:11px">${esc(modeLabel())}</div></div><button class="btn secondary" id="payClose">✕</button></div><div class="pay-body"><div class="pay-total"><span>Total da venda</span><strong>${money(total)}</strong></div><div class="pay-methods">${['Dinheiro','PIX','Débito','Crédito','Fiado'].map((m,i)=>`<button class="pay-method ${i===0?'active':''}" data-pay-method="${m}">${m}</button>`).join('')}</div><div class="pay-entry"><label>Forma selecionada<input id="payMethodDisplay" value="Dinheiro" readonly></label><label>Valor<input id="payAmount" inputmode="decimal" value="${total.toFixed(2).replace('.',',')}"></label><button class="btn primary" id="payAdd">Adicionar</button></div><div id="fiadoCustomerBox" class="hidden" style="margin-top:10px"><label>Cliente do fiado<select id="payFiadoCustomer"><option value="">Selecione...</option>${ensureFiadosData().customers.map(c=>`<option value="${c.id}">${esc(c.name||c.nome||'Cliente')}</option>`).join('')}</select></label><button class="btn secondary" id="payNewCustomer" style="margin-top:6px">+ Cadastrar cliente</button></div><div class="pay-lines" id="payLines"></div><div class="pay-balance"><span>Falta receber</span><strong id="payRemaining">${money(total)}</strong></div><div id="cashChange" class="notice success hidden"></div></div><div class="pay-footer"><button class="btn secondary" id="payCancel">Cancelar</button><button class="btn success" id="payConfirm" disabled>Confirmar pagamento</button></div></div>`;
+          document.body.appendChild(wrap);
+          const renderPayments=()=>{const paid=payments.reduce((a,p)=>a+p.amount,0);const remaining=Math.max(0,total-paid);wrap.querySelector('#payLines').innerHTML=payments.map((p,i)=>`<div class="pay-line"><span><strong>${p.method}</strong>${p.customerName?' · '+esc(p.customerName):''}</span><strong>${money(p.amount)}</strong><button class="btn danger" data-rm-pay="${i}" style="min-height:0;padding:4px 7px">×</button></div>`).join('');wrap.querySelector('#payRemaining').textContent=money(remaining);wrap.querySelector('#payRemaining').classList.toggle('ok',remaining<.005);wrap.querySelector('#payConfirm').disabled=remaining>=.005;wrap.querySelectorAll('[data-rm-pay]').forEach(b=>b.onclick=()=>{payments.splice(Number(b.dataset.rmPay),1);renderPayments()});if(remaining>0)wrap.querySelector('#payAmount').value=remaining.toFixed(2).replace('.',',')};
+          wrap.querySelectorAll('[data-pay-method]').forEach(b=>b.onclick=()=>{method=b.dataset.payMethod;wrap.querySelectorAll('[data-pay-method]').forEach(x=>x.classList.toggle('active',x===b));wrap.querySelector('#payMethodDisplay').value=method;wrap.querySelector('#fiadoCustomerBox').classList.toggle('hidden',method!=='Fiado')});
+          wrap.querySelector('#payNewCustomer').onclick=()=>{const name=prompt('Nome do cliente');if(!name)return;const data=ensureFiadosData();const c={id:uid('cli'),name,createdAt:new Date().toISOString()};data.customers.push(c);save();const opt=document.createElement('option');opt.value=c.id;opt.textContent=name;opt.selected=true;wrap.querySelector('#payFiadoCustomer').appendChild(opt)};
+          wrap.querySelector('#payAdd').onclick=()=>{const paid=payments.reduce((a,p)=>a+p.amount,0),remaining=Math.max(0,total-paid);let amount=Number(String(wrap.querySelector('#payAmount').value).replace('.','').replace(',','.'))||0;if(amount<=0)return alert('Informe o valor.');let customerId='',customerName='';if(method==='Fiado'){customerId=wrap.querySelector('#payFiadoCustomer').value;if(!customerId)return alert('Selecione o cliente do fiado.');const c=ensureFiadosData().customers.find(x=>x.id===customerId);customerName=c?.name||'Cliente'}if(method!=='Dinheiro'&&amount>remaining+.005)return alert('O valor é maior que o saldo restante.');let change=0;if(method==='Dinheiro'&&amount>remaining){change=amount-remaining;amount=remaining;const ch=wrap.querySelector('#cashChange');ch.textContent='Troco: '+money(change);ch.classList.remove('hidden')}payments.push({method,amount,customerId,customerName,change});renderPayments()};
+          const close=()=>wrap.remove();wrap.querySelector('#payClose').onclick=close;wrap.querySelector('#payCancel').onclick=close;
+          wrap.querySelector('#payConfirm').onclick=()=>{const paid=payments.reduce((a,p)=>a+p.amount,0);if(Math.abs(paid-total)>.005)return alert('O pagamento ainda não fecha com o total.');
+            const order=persistOrder('Finalizado');if(!order)return;order.payments=payments.map(p=>({...p}));order.paidAt=new Date().toISOString();order.total=total;
+            for(const p of payments){
+              if(p.method==='Dinheiro')fin2AddMovement({accountId:'cash',direction:'in',amount:p.amount,category:'Vendas',description:'Venda PDV '+saleMode,source:'pdv:'+order.id});
+              else if(p.method==='PIX')fin2AddMovement({accountId:'sicredi',direction:'in',amount:p.amount,category:'Vendas',description:'Venda PIX PDV '+saleMode,source:'pdv:'+order.id});
+              else if(p.method==='Débito'||p.method==='Crédito'){fin2State.receivables.unshift({id:fin2Uid('rec'),date:fin2Today(),dueDate:fin2Today(),description:'Venda '+p.method+' PDV '+saleMode,amount:p.amount,status:'open',source:'pdv_card',orderId:order.id,paymentMethod:p.method,createdAt:new Date().toISOString()});fin2Save()}
+              else if(p.method==='Fiado'){ensureFiadosData().transactions.push({id:uid('tx'),customerId:p.customerId,type:'charge',amount:p.amount,date:todayISO(),description:'Venda PDV '+saleMode,source:'pdv_fiado',orderId:order.id,createdAt:new Date().toISOString()})}
+            }
+            save();close();alert('Pagamento confirmado e venda finalizada.');pdvPage();
+          };
+          renderPayments();
+        };
+      receiveBtn.onclick=openPayment;draw();
+
+      function openCatalog(){
+        const cat=document.createElement('div');cat.className='catalog-backdrop';let category='Todos',query='';const cats=['Todos','Lanches','Porções','Bebidas','Almoço','Janta','Adicionais','Outros'];
+        cat.innerHTML=`<div class="catalog-modal"><div class="catalog-head"><button class="btn secondary" id="catalogClose">← Voltar</button><div class="pos-search"><span>⌕</span><input id="catalogSearch" placeholder="Buscar produto..."></div></div><div class="catalog-body"><aside class="catalog-cats">${cats.map((c,i)=>`<button data-cat="${c}" class="${i===0?'active':''}">${c}</button>`).join('')}</aside><main class="catalog-products"><div class="product-grid" id="catalogGrid"></div></main></div></div>`;document.body.appendChild(cat);
+        const drawCat=()=>{const list=shown.filter(p=>(category==='Todos'||String(p.category||'Outros').toLowerCase()===category.toLowerCase())&&(!query||p.name.toLowerCase().includes(query.toLowerCase())));cat.querySelector('#catalogGrid').innerHTML=list.map(p=>`<button class="product-tile" data-pick="${shown.indexOf(p)}"><div class="picon">${p.icon}</div><strong>${esc(p.name)}</strong><b>${money(p.price)}</b></button>`).join('');cat.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>openProductPick(shown[Number(b.dataset.pick)],cat))};
+        cat.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{category=b.dataset.cat;cat.querySelectorAll('[data-cat]').forEach(x=>x.classList.toggle('active',x===b));drawCat()});cat.querySelector('#catalogSearch').oninput=e=>{query=e.target.value;drawCat()};cat.querySelector('#catalogClose').onclick=()=>cat.remove();drawCat();
+      }
+      function openProductPick(p,catalog=null){
+        const pop=document.createElement('div');pop.className='product-pick-backdrop';pop.innerHTML=`<div class="product-pick"><button style="float:right;border:0;background:#ef4444;color:#fff" id="pickX">×</button><h3>${esc(p.name)}</h3><div style="text-align:center"><strong style="font-size:20px">${money(p.price)}</strong></div><div class="pick-row"><button id="qtyMinus">−</button><input id="pickQty" type="number" min="1" value="1"><button id="qtyPlus">+</button></div><label style="font-size:11px">Personalizar / observação<input id="pickNote" placeholder="Ex.: sem cebola" style="width:100%;padding:8px;margin-top:4px"></label><div class="product-pick-actions"><button class="btn secondary" id="pickCancel">Cancelar</button><button class="btn primary" id="pickAdd">＋ Adicionar</button></div></div>`;document.body.appendChild(pop);const q=pop.querySelector('#pickQty');pop.querySelector('#qtyMinus').onclick=()=>q.value=Math.max(1,Number(q.value)-1);pop.querySelector('#qtyPlus').onclick=()=>q.value=Number(q.value)+1;const close=()=>pop.remove();pop.querySelector('#pickX').onclick=close;pop.querySelector('#pickCancel').onclick=close;pop.querySelector('#pickAdd').onclick=()=>{const qty=Math.max(1,Number(q.value)||1),note=pop.querySelector('#pickNote').value;const x=cart.find(y=>y.name===p.name&&Number(y.price||0)===Number(p.price||0)&&String(y.note||'')===note);if(x)x.qty=(x.qty||1)+qty;else cart.push({...p,qty,note});close();catalog?.remove();showOrderModal()};
+      }
+    }
+  }.target.value='';query='';draw()}}};
       wrap.querySelector('#catalogClose').onclick=()=>wrap.remove();draw();
     };
     renderHome();
