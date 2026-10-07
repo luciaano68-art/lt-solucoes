@@ -1355,6 +1355,24 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
 .prototype-status{display:flex;align-items:center;gap:8px;font-size:12px;color:#9fb0c4}.prototype-status i{width:8px;height:8px;background:#34d17b;border-radius:50%;display:block}
 @media(max-width:900px){.prototype-gateway-shell{grid-template-columns:1fr}.prototype-gateway-brand{min-height:auto;padding:28px}.prototype-gateway-main{padding:28px}.prototype-entry-grid{grid-template-columns:1fr}.shell{grid-template-columns:1fr}.content{padding:20px 15px 80px}}
 
+
+/* V2 visual: operação e gestão com identidades próprias */
+.client-app.area-operation{--area-accent:#16a34a;--area-soft:#ecfdf3}
+.client-app.area-management{--area-accent:#1769e0;--area-soft:#eef5ff}
+.area-operation .sidebar{background:#101b24}.area-operation .sidebar nav button.active{background:#16834b;border-color:#25a861}
+.area-management .sidebar{background:#111d30}
+.area-pill{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:6px 10px;background:var(--area-soft);color:var(--area-accent);font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.area-pill:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--area-accent)}
+.pdv-command{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.55fr);gap:16px;margin-bottom:16px}
+.pdv-main-panel,.pdv-side-panel{background:#fff;border:1px solid var(--line);border-radius:15px;padding:20px}
+.pdv-channel-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.pdv-channel{min-height:145px!important;padding:20px!important;border-radius:13px!important;box-shadow:none!important;position:relative;overflow:hidden}
+.pdv-channel h2{font-size:20px;margin:10px 0 5px}.pdv-channel strong{color:#16834b;font-size:12px}.pdv-channel .channel-icon{font-size:29px}
+.cash-state{display:flex;align-items:center;justify-content:space-between;padding:15px;border-radius:11px;background:#f7f9fb;margin-bottom:12px}.cash-state strong{font-size:18px}.cash-state.open{background:#edf9f1}.cash-dot{width:10px;height:10px;border-radius:50%;background:#94a3b8}.cash-state.open .cash-dot{background:#22a75a;box-shadow:0 0 0 4px rgba(34,167,90,.12)}
+.barcode-box{display:flex;gap:8px;align-items:center;background:#f7f9fb;border:1px solid #e2e8f0;padding:9px 12px;border-radius:10px}.barcode-box input{border:0;background:transparent;box-shadow:none!important;padding:7px 0}
+.management-module-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}.management-module{background:#fff;border:1px solid var(--line);border-radius:12px;padding:17px;text-align:left;cursor:pointer;min-height:135px}.management-module:hover{border-color:#a8c6ee;background:#fbfdff}.management-module .module-icon{font-size:23px}.management-module h3{font-size:15px;margin:13px 0 5px}.management-module p{font-size:12px;line-height:1.45;color:var(--muted);margin:0}
+@media(max-width:1100px){.pdv-command{grid-template-columns:1fr}.management-module-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:650px){.pdv-channel-grid,.management-module-grid{grid-template-columns:1fr}}
+
 </style>
 <style id="mobile-quote-ux-v30">
 @media (max-width:720px){
@@ -2407,7 +2425,7 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
     const initial = (profileName || 'A').trim().charAt(0).toUpperCase();
 
     root(`
-      <div class="app ${representativeMode?'rep-app':master?'master-app':'client-app'}">
+      <div class="app ${representativeMode?'rep-app':master?'master-app':('client-app area-'+prototypeArea)}">
         <div class="shell">
           ${(!master && !representativeMode) ? '<button class="client-menu-toggle" id="clientMenuToggle" type="button" aria-label="Abrir menu">☰</button><div class="client-menu-overlay" id="clientMenuOverlay"></div>' : ''}
           <aside class="sidebar">
@@ -2571,25 +2589,34 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
   }
   function pdvPage(){
     const g=tessaroGestaoInit();
+    const todayOrders=g.orders.filter(o=>String(o.createdAt||'').slice(0,10)===todayISO()).length;
     layout(`
-      <div class="page-head"><div><h1>PDV</h1><p class="muted">Mesa, Balcão, Caixa e Delivery em uma única operação.</p></div></div>
+      <div class="page-head">
+        <div><div class="area-pill">PDV / Operação</div><h1>Frente de Caixa</h1><p class="muted">Venda rápida e operação diária do restaurante.</p></div>
+        <div class="actions">${g.cash.open?'<button class="btn danger" id="closeCash">Fechar caixa</button>':'<button class="btn success" id="openCash">Abrir caixa</button>'}<button class="btn secondary" id="togglePrint">${g.printPaused?'Retomar impressão':'Pausar impressão'}</button></div>
+      </div>
       <section class="grid metrics">
-        <div class="card metric blue"><div class="metric-icon">▣</div><span>Caixa diário</span><strong>${g.cash.open?'ABERTO':'FECHADO'}</strong><small>${g.cash.open?'Aberto em '+new Date(g.cash.openedAt).toLocaleString('pt-BR'):'Abra o caixa para iniciar as vendas'}</small></div>
-        <div class="card metric green"><div class="metric-icon">$</div><span>Fundo de caixa</span><strong>${money(g.cash.openingAmount)}</strong><small>valor informado na abertura</small></div>
-        <div class="card metric purple"><div class="metric-icon">☷</div><span>Pedidos hoje</span><strong>${g.orders.filter(o=>String(o.createdAt||'').slice(0,10)===todayISO()).length}</strong><small>todos os canais</small></div>
-        <div class="card metric teal"><div class="metric-icon">▥</div><span>Impressão</span><strong>${g.printPaused?'PAUSADA':'ATIVA'}</strong><small>controle operacional</small></div>
+        <div class="card metric green"><span>Caixa</span><strong>${g.cash.open?'ABERTO':'FECHADO'}</strong><small>${g.cash.open?'Operação liberada':'Aguardando abertura'}</small></div>
+        <div class="card metric blue"><span>Fundo inicial</span><strong>${money(g.cash.openingAmount)}</strong><small>valor da abertura</small></div>
+        <div class="card metric purple"><span>Pedidos hoje</span><strong>${todayOrders}</strong><small>todos os canais</small></div>
+        <div class="card metric teal"><span>Impressora</span><strong>${g.printPaused?'PAUSADA':'ATIVA'}</strong><small>emissão de pedidos</small></div>
       </section>
-      <section class="card">
-        <h2>Abertura e fechamento</h2>
-        <div class="actions">
-          ${g.cash.open?'<button class="btn danger" id="closeCash">Fechar caixa</button>':'<button class="btn success" id="openCash">Abrir caixa</button>'}
-          <button class="btn secondary" id="togglePrint">${g.printPaused?'Retomar impressão':'Pausar impressão'}</button>
+      <section class="pdv-command">
+        <div class="pdv-main-panel">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:15px"><div><h2 style="margin-bottom:3px">Nova venda</h2><span class="muted" style="font-size:12px">Selecione o tipo de atendimento</span></div><span class="area-pill" style="margin:0">Teclas rápidas</span></div>
+          <div class="pdv-channel-grid">
+            ${[['Mesa','🍽️','Atendimento em mesa'],['Balcão','🛍️','Pedido para retirada'],['Caixa','🧾','Venda direta no caixa'],['Delivery','🛵','Pedido para entrega']].map(x=>`<button class="card pdv-channel" data-channel="${x[0]}"><div class="channel-icon">${x[1]}</div><h2>${x[0]}</h2><p class="muted">${x[2]}</p><strong>ABRIR PEDIDO →</strong></button>`).join('')}
+          </div>
         </div>
+        <aside class="pdv-side-panel">
+          <h2 style="font-size:17px">Status do caixa</h2>
+          <div class="cash-state ${g.cash.open?'open':''}"><div><small class="muted">Situação atual</small><strong style="display:block">${g.cash.open?'Caixa aberto':'Caixa fechado'}</strong></div><i class="cash-dot"></i></div>
+          <div style="padding:8px 2px 18px"><small class="muted">Abertura</small><div style="font-weight:800;margin-top:3px">${g.cash.open?new Date(g.cash.openedAt).toLocaleString('pt-BR'):'—'}</div></div>
+          <h2 style="font-size:17px;margin-top:8px">Código de barras</h2>
+          <p class="muted" style="font-size:12px">Bipe o produto ou digite o código.</p>
+          <div class="barcode-box"><span>▥</span><input id="barcodeInput" placeholder="Código do produto" autocomplete="off"></div>
+        </aside>
       </section>
-      <section class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
-        ${[['Mesa','🍽️'],['Balcão','🛍️'],['Caixa','🧾'],['Delivery','🛵']].map(x=>`<button class="card pdv-channel" data-channel="${x[0]}" style="cursor:pointer;text-align:left"><h2>${x[1]} ${x[0]}</h2><p class="muted">Abrir novo pedido de ${x[0].toLowerCase()}.</p><strong>Novo pedido →</strong></button>`).join('')}
-      </section>
-      <section class="card"><h2>Leitor de código de barras</h2><p class="muted">Campo preparado para leitor USB/Bluetooth que funciona como teclado.</p><input id="barcodeInput" placeholder="Leia ou digite o código de barras e pressione Enter" autocomplete="off"></section>
     `,'pdv');
     document.querySelector('#openCash')?.addEventListener('click',()=>{const v=prompt('Valor inicial/troco do caixa:','0');if(v===null)return;g.cash={open:true,openedAt:new Date().toISOString(),openingAmount:Number(String(v).replace(',','.'))||0};save();pdvPage()});
     document.querySelector('#closeCash')?.addEventListener('click',()=>{const counted=prompt('Quanto dinheiro foi contado no caixa?','0');if(counted===null)return;alert('Fechamento registrado. Contado: '+money(Number(String(counted).replace(',','.'))||0));g.cash={open:false,openedAt:null,openingAmount:0};save();pdvPage()});
@@ -3971,53 +3998,22 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
     const monthPayments=payments.filter(t=>String(t.date||'').startsWith(month)).reduce((sum,t)=>sum+Number(t.amount||0),0);
 
     layout(`
-      <div class="page-head">
-        <div>
-          <h1>TESSARO PDV PROTOTIPO</h1>
-          <p class="muted">Central de gestão do restaurante: operação, financeiro, compras, estoque, carnes, clientes e relatórios.</p>
-        </div>
-      </div>
-
-      <section class="quick-ops">
-        <button class="quick-op" data-page="pdv"><kbd>F2</kbd><div style="font-size:26px">🧾</div><strong>PDV</strong><span>Venda rápida, mesas, balcão e caixa</span></button>
-        <button class="quick-op" data-page="delivery"><kbd>F3</kbd><div style="font-size:26px">🛵</div><strong>Delivery</strong><span>Pedidos e acompanhamento</span></button>
-        <button class="quick-op" data-page="pedidosFixos"><kbd>F4</kbd><div style="font-size:26px">🔁</div><strong>Clientes Fixos</strong><span>Pedidos recorrentes e pausas</span></button>
-        <button class="quick-op" data-page="fiados"><kbd>F5</kbd><div style="font-size:26px">💳</div><strong>Fiados</strong><span>Contas e recebimentos de clientes</span></button>
-      </section>
-
+      <div class="page-head"><div><div class="area-pill">Gestão</div><h1>Visão Geral</h1><p class="muted">Administração, controles e indicadores do Tessaro Restaurante.</p></div><div style="text-align:right"><small class="muted">Hoje</small><strong style="display:block">${new Date().toLocaleDateString('pt-BR')}</strong></div></div>
       <section class="grid metrics">
-        <div class="card metric blue"><div class="metric-icon">$</div><span>Fiados em aberto</span><strong>${money(totalOpen)}</strong><small>${customersOpen} cliente(s) com saldo</small></div>
-        <div class="card metric purple"><div class="metric-icon">✉</div><span>Faturas a enviar</span><strong>${pendingInvoice}</strong><small>controle de envio aos clientes</small></div>
-        <div class="card metric green"><div class="metric-icon">✓</div><span>Recebimentos no mês</span><strong>${money(monthPayments)}</strong><small>pagamentos confirmados</small></div>
-        <div class="card metric teal"><div class="metric-icon">▦</div><span>Financeiro</span><strong>Em breve</strong><small>fluxo de caixa e bancos</small></div>
+        <div class="card metric blue"><span>Fiados em aberto</span><strong>${money(totalOpen)}</strong><small>${customersOpen} cliente(s) com saldo</small></div>
+        <div class="card metric purple"><span>Faturas a enviar</span><strong>${pendingInvoice}</strong><small>pendências de clientes</small></div>
+        <div class="card metric green"><span>Recebimentos no mês</span><strong>${money(monthPayments)}</strong><small>pagamentos confirmados</small></div>
+        <div class="card metric teal"><span>Área</span><strong>GESTÃO</strong><small>ambiente administrativo</small></div>
       </section>
-
-      <section class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
-        <button class="card" data-page="pdv" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><h2 style="margin-top:0">🧾 PDV</h2><p class="muted">Mesa, Balcão, Caixa, abertura/fechamento e código de barras.</p><strong>Abrir PDV →</strong></button>
-        <button class="card" data-page="delivery" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><h2 style="margin-top:0">🛵 Delivery</h2><p class="muted">Pedidos do chat/app, aceite, produção e clientes fixos.</p><strong>Abrir Delivery →</strong></button>
-        <button class="card" data-page="estoque" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><h2 style="margin-top:0">📦 Estoque</h2><p class="muted">Produtos e insumos integrados aos recebimentos.</p><strong>Abrir Estoque →</strong></button>
-        <button class="card" data-page="recebimentos" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><h2 style="margin-top:0">✅ Recebimentos</h2><p class="muted">Conferência de compras, boletos, avarias e créditos.</p><strong>Abrir Recebimentos →</strong></button>
-        <button class="card" data-page="relatorios" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><h2 style="margin-top:0">📊 Relatórios</h2><p class="muted">Relatórios operacionais, chat e geração de PDF.</p><strong>Abrir Relatórios →</strong></button>
-        <button class="card" data-page="fiados" style="text-align:left;cursor:pointer;border:1px solid var(--line)">
-          <h2 style="margin-top:0">💳 Fiados</h2>
-          <p class="muted">Importação do Consumer, faturas enviadas, recebimentos e contas dos clientes.</p>
-          <strong>Abrir Fiados →</strong>
-        </button>
-        <button class="card" data-page="quotations" style="text-align:left;cursor:pointer;border:1px solid var(--line)">
-          <h2 style="margin-top:0">🛒 Cotações</h2>
-          <p class="muted">Cotações, fornecedores, produtos, pedidos e inteligência de compras.</p>
-          <strong>Abrir Cotações →</strong>
-        </button>
-        <div class="card" style="opacity:.75">
-          <h2 style="margin-top:0">💰 Financeiro</h2>
-          <p class="muted">Fluxo de caixa, bancos e conciliação dos recebimentos.</p>
-          <strong>Próxima etapa</strong>
-        </div>
-        <div class="card" style="opacity:.75">
-          <h2 style="margin-top:0">🥩 Carnes</h2>
-          <p class="muted">Custos, retiradas, perdas, sobras e resumo mensal.</p>
-          <strong>Próxima etapa</strong>
-        </div>
+      <div style="margin-top:25px"><h2 style="font-size:18px;margin-bottom:4px">Módulos de gestão</h2><p class="muted" style="font-size:12px">Acesse os controles administrativos do restaurante.</p></div>
+      <section class="management-module-grid">
+        <button class="management-module" data-page="financeiro"><div class="module-icon">▥</div><h3>Financeiro</h3><p>Contas, bancos, recebimentos e posição financeira.</p></button>
+        <button class="management-module" data-page="purchasesHub"><div class="module-icon">▤</div><h3>Compras / Cotações</h3><p>Fornecedores, pesquisas de preço e pedidos.</p></button>
+        <button class="management-module" data-page="recebimentos"><div class="module-icon">✓</div><h3>Recebimentos</h3><p>Conferência de mercadorias, notas e boletos.</p></button>
+        <button class="management-module" data-page="estoque"><div class="module-icon">▦</div><h3>Estoque</h3><p>Produtos, insumos, quantidades e custos.</p></button>
+        <button class="management-module" data-page="carnes"><div class="module-icon">♨</div><h3>Carnes</h3><p>Retiradas, perdas, sobras e custo do almoço.</p></button>
+        <button class="management-module" data-page="relatorios"><div class="module-icon">▤</div><h3>Relatórios</h3><p>Indicadores e relatórios administrativos.</p></button>
+        <button class="management-module" data-page="companySettings"><div class="module-icon">⚙</div><h3>Configurações</h3><p>Parâmetros e cadastros do sistema.</p></button>
       </section>
     `,'dashboard');
     document.querySelectorAll('[data-page]').forEach(button=>button.onclick=()=>navigate(button.dataset.page));
