@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Tessaro PDV">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" href="./tessaro-app-icon.svg" type="image/svg+xml">
+  <link rel="icon" href="./icon-192.png" type="image/png">
   <style>
 
 :root{
@@ -2574,7 +2574,76 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
 
     const clientApp=document.querySelector('.client-app');
     const clientMenuToggle=document.querySelector('#clientMenuToggle');
-    const clientMenuOverlay=document.querySelector('#clien  function pdvPage(){
+    const clientMenuOverlay=document.querySelector('#clientMenuOverlay');
+    const closeClientMenu=()=>clientApp?.classList.remove('menu-open');
+    if(clientMenuToggle){
+      clientMenuToggle.onclick=()=>clientApp?.classList.toggle('menu-open');
+      if(clientMenuOverlay) clientMenuOverlay.onclick=closeClientMenu;
+    }
+
+    const installButton=document.querySelector('#installAppBtn');
+    if(installButton){
+      installButton.onclick=async()=>{
+        if(deferredInstallPrompt){
+          deferredInstallPrompt.prompt();
+          await deferredInstallPrompt.userChoice;
+          deferredInstallPrompt=null;
+          installButton.style.display='none';
+          return;
+        }
+
+        const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+        if(isIOS){
+          alert('No iPhone: toque no botão Compartilhar do Safari e escolha “Adicionar à Tela de Início”.');
+        }else{
+          alert('Abra o menu do navegador e escolha “Instalar aplicativo” ou “Adicionar à tela inicial”.');
+        }
+      };
+    }
+
+    document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{document.querySelector('.client-app')?.classList.remove('menu-open');navigate(b.dataset.page);});
+    const areaChooser=document.querySelector('#prototypeAreaChooser');
+    if(areaChooser) areaChooser.onclick=()=>{sessionStorage.removeItem('tessaro_prototype_area');prototypeAccessSelector();};
+    const operationAreaChooser=document.querySelector('#operationAreaChooser');
+    if(operationAreaChooser) operationAreaChooser.onclick=()=>{sessionStorage.removeItem('tessaro_prototype_area');prototypeAccessSelector();};
+
+    const backToPurchasesHub=document.querySelector('#backToPurchasesHub');
+    if(backToPurchasesHub) backToPurchasesHub.onclick=()=>navigate('purchasesHub');
+    if(!window.__tessaroHotkeysBound){
+      window.__tessaroHotkeysBound=true;
+      document.addEventListener('keydown',event=>{
+        if(event.altKey||event.ctrlKey||event.metaKey) return;
+        const tag=(event.target?.tagName||'').toUpperCase();
+        if(['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+        const area=sessionStorage.getItem('tessaro_prototype_area');
+        const hotkeys=area==='operation'
+          ? {F2:'pdv',F3:'delivery',F4:'pedidosFixos',F5:'fiados'}
+          : {F1:'dashboard',F6:'financeiro',F7:'purchasesHub',F8:'recebimentos',F9:'estoque',F10:'carnes',F11:'relatorios',F12:'companySettings'};
+        const page=hotkeys[event.key];
+        if(page){event.preventDefault();navigate(page);}
+      });
+    }
+  }
+
+
+  // TESSARO_PDV_PROTOTIPO_GESTAO_V1_20261006
+  function tessaroGestaoInit(){
+    if(!db.gestao) db.gestao={};
+    const g=db.gestao;
+    if(!Array.isArray(g.orders)) g.orders=[];
+    if(!Array.isArray(g.stock)) g.stock=[];
+    if(!Array.isArray(g.receipts)) g.receipts=[];
+    if(!Array.isArray(g.fixedCustomers)) g.fixedCustomers=[];
+    if(!Array.isArray(g.accounts)) g.accounts=[
+      {id:'caixa',name:'Caixa físico',balance:0},{id:'sicredi',name:'Sicredi',balance:0}
+    ];
+    if(!Array.isArray(g.payables)) g.payables=[];
+    if(!Array.isArray(g.receivables)) g.receivables=[];
+    if(typeof g.printPaused!=='boolean') g.printPaused=false;
+    if(!g.cash) g.cash={open:false,openedAt:null,openingAmount:0};
+    return g;
+  }
+  function pdvPage(){
     const g=tessaroGestaoInit(), now=new Date();
     const isOpen=o=>o.status!=='Finalizado'&&o.status!=='Cancelado';
     const openOrders=g.orders.filter(isOpen);
@@ -2667,25 +2736,6 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
       wrap.querySelector('#catalogClose').onclick=()=>wrap.remove();draw();
     };
     renderHome();
-  }payAdd').onclick=()=>{const paid=payments.reduce((a,p)=>a+p.amount,0),remaining=Math.max(0,total-paid);let amount=Number(String(wrap.querySelector('#payAmount').value).replace('.','').replace(',','.'))||0;if(amount<=0)return alert('Informe o valor.');let customerId='',customerName='';if(method==='Fiado'){customerId=wrap.querySelector('#payFiadoCustomer').value;if(!customerId)return alert('Selecione o cliente do fiado.');const c=ensureFiadosData().customers.find(x=>x.id===customerId);customerName=c?.name||'Cliente'}if(method!=='Dinheiro'&&amount>remaining+.005)return alert('O valor é maior que o saldo restante.');let change=0;if(method==='Dinheiro'&&amount>remaining){change=amount-remaining;amount=remaining;const ch=wrap.querySelector('#cashChange');ch.textContent='Troco: '+money(change);ch.classList.remove('hidden')}payments.push({method,amount,customerId,customerName,change});renderPayments()};
-      const close=()=>wrap.remove();wrap.querySelector('#payClose').onclick=close;wrap.querySelector('#payCancel').onclick=close;
-      wrap.querySelector('#payConfirm').onclick=()=>{const paid=payments.reduce((a,p)=>a+p.amount,0);if(Math.abs(paid-total)>.005)return alert('O pagamento ainda não fecha com o total.');
-        const order=persistOrder('Finalizado');if(!order)return;order.payments=payments.map(p=>({...p}));order.paidAt=new Date().toISOString();order.total=total;
-        for(const p of payments){
-          if(p.method==='Dinheiro')fin2AddMovement({accountId:'cash',direction:'in',amount:p.amount,category:'Vendas',description:'Venda PDV '+saleMode,source:'pdv:'+order.id});
-          else if(p.method==='PIX')fin2AddMovement({accountId:'sicredi',direction:'in',amount:p.amount,category:'Vendas',description:'Venda PIX PDV '+saleMode,source:'pdv:'+order.id});
-          else if(p.method==='Débito'||p.method==='Crédito'){fin2State.receivables.unshift({id:fin2Uid('rec'),date:fin2Today(),dueDate:fin2Today(),description:'Venda '+p.method+' PDV '+saleMode,amount:p.amount,status:'open',source:'pdv_card',orderId:order.id,paymentMethod:p.method,createdAt:new Date().toISOString()});fin2Save()}
-          else if(p.method==='Fiado'){ensureFiadosData().transactions.push({id:uid('tx'),customerId:p.customerId,type:'charge',amount:p.amount,date:todayISO(),description:'Venda PDV '+saleMode,source:'pdv_fiado',orderId:order.id,createdAt:new Date().toISOString()})}
-        }
-        save();close();alert('Pagamento confirmado e venda finalizada.');pdvPage();
-      };
-      renderPayments();
-    };
-    receiveBtn.onclick=openPayment;
-    document.querySelector('#openCash')?.addEventListener('click',()=>{const v=prompt('Valor inicial/troco do caixa:','0');if(v===null)return;g.cash={open:true,openedAt:new Date().toISOString(),openingAmount:Number(String(v).replace(',','.'))||0};save();pdvPage()});
-    document.querySelector('#closeCash')?.addEventListener('click',()=>{const counted=prompt('Quanto dinheiro foi contado no caixa?','0');if(counted===null)return;g.cash={open:false,openedAt:null,openingAmount:0};save();pdvPage()});
-    document.querySelector('#barcodeInput').onkeydown=e=>{if(e.key==='Enter'){alert('Código lido: '+e.target.value);e.target.value=''}};
-    renderCart();refreshMode();
   }
   function deliveryPage(){
     const g=tessaroGestaoInit();
@@ -10675,7 +10725,7 @@ Clientes quitados não entram no total a receber e nenhum saldo será alterado.`
 
   if('serviceWorker' in navigator){
     window.addEventListener('load',()=>{
-      navigator.serviceWorker.register('./service-worker.js?v=43',{updateViaCache:'none'}).then(reg=>reg.update()).catch(error=>{
+      navigator.serviceWorker.register('./service-worker.js?v=44',{updateViaCache:'none'}).then(reg=>reg.update()).catch(error=>{
         console.warn('Service Worker não registrado:',error);
       });
     });
