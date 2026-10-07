@@ -2648,11 +2648,15 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
     if(!g.cash) g.cash={open:false,openedAt:null,openingAmount:0};
     return g;
   }
-  function pdvPage(){
-    const g=tessaroGestaoInit(),now=new Date(),isOpen=o=>o.status!=='Finalizado'&&o.status!=='Cancelado',openOrders=g.orders.filter(isOpen);
+  function tessaroSaleProducts(){
     const products=(db.products||[]).filter(p=>!p.companyId||p.companyId===session.companyId);
     const fallback=[{name:'X-Salada',price:23,icon:'🍔',category:'Lanches'},{name:'X-Bacon',price:26,icon:'🍔',category:'Lanches'},{name:'X-Tudo',price:30,icon:'🍔',category:'Lanches'},{name:'Batata 500g',price:22,icon:'🍟',category:'Porções'},{name:'Porção',price:53,icon:'🍽️',category:'Porções'},{name:'Refrigerante Lata',price:0,icon:'🥤',category:'Bebidas'},{name:'Refrigerante 2L',price:17,icon:'🥤',category:'Bebidas'},{name:'Marmita Normal',price:28,icon:'🍱',category:'Almoço'},{name:'Marmita Meia',price:20,icon:'🍱',category:'Almoço'}];
-    const shown=products.length?products.map(p=>({id:p.id,name:p.name,barcode:p.barcode||p.code||'',price:Number(p.salePrice||p.price||0),icon:'•',category:p.categoryName||(db.categories||[]).find(c=>c.id===p.categoryId)?.name||p.category||'Outros'})):fallback;
+    return products.length?products.map(p=>({id:p.id,name:p.name,barcode:p.barcode||p.code||'',price:Number(p.salePrice||p.price||0),icon:'•',category:p.categoryName||(db.categories||[]).find(c=>c.id===p.categoryId)?.name||p.category||'Outros'})):fallback.map((p,i)=>({...p,id:'pdv_default_'+i}));
+  }
+
+  function pdvPage(){
+    const g=tessaroGestaoInit(),now=new Date(),isOpen=o=>o.status!=='Finalizado'&&o.status!=='Cancelado',openOrders=g.orders.filter(isOpen);
+    const shown=tessaroSaleProducts();
     let saleMode=null,selectedTable=null,currentOrder=null,cart=[],customerName='';
     const total=()=>cart.reduce((a,x)=>a+Number(x.price||0)*Number(x.qty||1),0);
     const modeLabel=()=>orderTitle();
@@ -4064,14 +4068,30 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
       var existing=id?d.customers.find(function(a){return a.id===id}):null;
       var edit=!!existing;
       var x=existing?Object.assign({},existing):{id:'pf_'+Date.now()+'_'+Math.random().toString(36).slice(2,9),name:'',order:'',notes:'',days:[],active:true};
+      var catalog=tessaroSaleProducts();
+      var savedItem=Array.isArray(x.items)?x.items[0]:null;
+      var savedName=x.productName||savedItem?.name||String(x.order||'').replace(/^\d+\s*[x×]\s*/i,'');
+      var selected=catalog.find(function(p){return String(p.id)===String(x.productId||savedItem?.productId||'')})
+        ||catalog.find(function(p){return p.name.toLowerCase()===savedName.toLowerCase()});
+      var qty=Number(x.quantity||savedItem?.qty||String(x.order||'').match(/^(\d+)\s*[x×]/i)?.[1]||1);
+      var options='<option value="">Selecione o item...</option>'+catalog.map(function(p,i){return '<option value="'+i+'" '+(p===selected?'selected':'')+'>'+esc(p.name)+'</option>'}).join('');
+      if(!selected&&x.order) options+='<option value="legacy" selected>'+esc('Pedido atual: '+x.order)+'</option>';
       var checks=['seg','ter','qua','qui','sex','sab'].map(function(k){return '<label><input type="checkbox" value="'+k+'" '+((x.days||[]).indexOf(k)>=0?'checked':'')+'> '+pfLabel(k)+'</label>'}).join('');
-      modal.innerHTML='<div class="pf-modal"><div class="card"><h2>'+(edit?'Editar':'Novo')+' cliente fixo</h2><div id="pfForm"><label>Nome</label><input id="pfName" value="'+esc(x.name||'')+'" autocomplete="off"><label style="margin-top:12px">Pedido / marmita</label><input id="pfOrder" value="'+esc(x.order||'')+'" placeholder="Ex.: 1/2 marmita"><label style="margin-top:12px">Dias da semana</label><div class="pf-days">'+checks+'</div><label style="margin-top:12px">Observações</label><textarea id="pfNotes">'+esc(x.notes||'')+'</textarea><div class="actions" style="margin-top:15px"><button class="btn primary" type="button" id="pfSave">Salvar cliente</button><button class="btn secondary" type="button" id="pfCancel">Cancelar</button>'+(edit?'<button class="btn danger" type="button" id="pfDelete">Excluir</button>':'')+'</div></div></div></div>';
+      modal.innerHTML='<div class="pf-modal"><div class="card"><h2>'+(edit?'Editar':'Novo')+' cliente fixo</h2><div id="pfForm"><label for="pfName">Nome</label><input id="pfName" value="'+esc(x.name||'')+'" autocomplete="off"><label for="pfOrder" style="margin-top:12px">Item do pedido</label><select id="pfOrder">'+options+'</select><label for="pfQuantity" style="margin-top:12px">Quantidade</label><input id="pfQuantity" type="number" min="1" step="1" value="'+qty+'"><label for="pfNotes" style="margin-top:12px">Observação do item</label><textarea id="pfNotes" placeholder="Ex.: sem cebola, sem feijão ou carne separada">'+esc(x.notes||savedItem?.note||'')+'</textarea><label style="margin-top:12px">Dias da semana</label><div class="pf-days">'+checks+'</div><div class="actions" style="margin-top:15px"><button class="btn primary" type="button" id="pfSave">Salvar cliente</button><button class="btn secondary" type="button" id="pfCancel">Cancelar</button>'+(edit?'<button class="btn danger" type="button" id="pfDelete">Excluir</button>':'')+'</div></div></div></div>';
       document.querySelector('#pfCancel').onclick=function(){modal.innerHTML=''};
       document.querySelector('#pfSave').onclick=function(){
         var btn=this,name=(document.querySelector('#pfName').value||'').trim();
         if(!name){alert('Informe o nome do cliente.');document.querySelector('#pfName').focus();return}
+        var choice=document.querySelector('#pfOrder').value,quantity=Number(document.querySelector('#pfQuantity').value);
+        if(choice===''){alert('Selecione o item do pedido.');document.querySelector('#pfOrder').focus();return}
+        if(!Number.isInteger(quantity)||quantity<1){alert('Informe uma quantidade inteira maior que zero.');document.querySelector('#pfQuantity').focus();return}
+        var product=choice==='legacy'?null:catalog[Number(choice)];
+        var notes=(document.querySelector('#pfNotes').value||'').trim();
         btn.disabled=true;btn.textContent='Salvando...';
-        var record={id:x.id,name:name,order:(document.querySelector('#pfOrder').value||'').trim(),notes:(document.querySelector('#pfNotes').value||'').trim(),days:Array.from(document.querySelectorAll('.pf-days input:checked')).map(function(i){return i.value}),active:true,updatedAt:new Date().toISOString()};
+        var record=Object.assign({},x,{id:x.id,name:name,order:product?quantity+' × '+product.name:x.order,notes:notes,quantity:quantity,days:Array.from(document.querySelectorAll('.pf-days input:checked')).map(function(i){return i.value}),active:true,updatedAt:new Date().toISOString()});
+        if(product){record.productId=product.id;record.productName=product.name;record.items=[{productId:product.id,name:product.name,qty:quantity,price:product.price,note:notes}];}
+        else if(Array.isArray(record.items)){record.items=record.items.map(function(item){return Object.assign({},item,{note:notes})});}
+
         var idx=d.customers.findIndex(function(a){return a.id===record.id});
         if(idx>=0)d.customers.splice(idx,1,record);else d.customers.push(record);
         db.pedidosFixos=d;
@@ -4095,7 +4115,7 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
     }
     document.querySelector('#pfNew').onclick=function(){openForm(null)};
     document.querySelector('#pfAll').onclick=function(){
-      var items=d.customers.length?d.customers.map(function(x){return '<div class="pf-row"><div><strong>'+esc(x.name)+'</strong><div class="muted">'+esc(x.order||'')+' · '+(x.days||[]).map(pfLabel).join(', ')+'</div></div><button class="btn secondary" type="button" data-pfm="'+x.id+'">Editar</button></div>'}).join(''):'<p>Nenhum cliente cadastrado.</p>';
+      var items=d.customers.length?d.customers.map(function(x){return '<div class="pf-row"><div><strong>'+esc(x.name)+'</strong><div class="muted">'+esc(x.order||'')+(x.notes?' · '+esc(x.notes):'')+' · '+(x.days||[]).map(pfLabel).join(', ')+'</div></div><button class="btn secondary" type="button" data-pfm="'+x.id+'">Editar</button></div>'}).join(''):'<p>Nenhum cliente cadastrado.</p>';
       modal.innerHTML='<div class="pf-modal"><div class="card"><h2>Todos os clientes cadastrados</h2><div class="pf-list">'+items+'</div><button class="btn secondary" type="button" id="pfClose" style="margin-top:15px">Fechar</button></div></div>';
       document.querySelector('#pfClose').onclick=function(){modal.innerHTML=''};
       document.querySelectorAll('[data-pfm]').forEach(function(b){b.onclick=function(){openForm(b.dataset.pfm)}});
