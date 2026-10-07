@@ -1403,6 +1403,16 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
 
 .pos-start-screen{height:100%;min-height:520px;display:grid;place-items:center;padding:30px}.pos-start-inner{width:min(700px,100%);text-align:center}.pos-start-icon{width:72px;height:72px;border-radius:18px;background:#eef5ff;color:#1769e0;display:grid;place-items:center;font-size:34px;margin:0 auto 18px}.pos-start-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}.pos-start-action{border:1px solid #dce4ed;background:#fff;border-radius:12px;padding:22px;text-align:left;cursor:pointer;min-height:130px}.pos-start-action:hover{border-color:#7aa9e7;box-shadow:0 8px 22px rgba(23,105,224,.08)}.pos-start-action span{font-size:25px}.pos-start-action strong{display:block;font-size:16px;margin:10px 0 4px}.pos-start-action small{color:var(--muted)}.pos-order-screen.hidden{display:none!important}.pos-start-screen.hidden{display:none!important}@media(max-width:600px){.pos-start-actions{grid-template-columns:1fr}}
 
+
+/* Operação: navegação horizontal no topo */
+.area-operation .shell{display:block!important}
+.area-operation .sidebar,.area-operation .client-menu-toggle,.area-operation .client-menu-overlay{display:none!important}
+.area-operation .content{max-width:none!important;padding:12px 18px 28px!important}
+.operation-topnav{height:58px;background:#111827;color:#fff;display:flex;align-items:center;gap:7px;padding:0 16px;position:sticky;top:0;z-index:1000;box-shadow:0 3px 12px rgba(15,23,42,.16)}
+.operation-topnav .op-brand{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:950;letter-spacing:.05em;margin-right:12px;white-space:nowrap}.operation-topnav .op-brand span{display:grid;place-items:center;width:31px;height:31px;border-radius:8px;background:#16a34a;font-size:17px}
+.operation-topnav button{border:0;background:transparent;color:#cbd5e1;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}.operation-topnav button:hover{background:#1f2937;color:#fff}.operation-topnav button.active{background:#1769e0;color:#fff}.operation-topnav button.exit-area{margin-left:auto;background:#263244;color:#fff}.operation-topnav button.exit-area:hover{background:#344258}.operation-topnav kbd{font-size:8px;margin-left:5px;opacity:.65}
+@media(max-width:760px){.operation-topnav{overflow-x:auto;padding:0 9px}.operation-topnav .op-brand{display:none}.operation-topnav button.exit-area{margin-left:0}.area-operation .content{padding:10px!important}}
+
 </style>
 <style id="mobile-quote-ux-v30">
 @media (max-width:720px){
@@ -2537,6 +2547,16 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
               <button data-page="repPaymentConditions" class="${active==='repPaymentConditions'?'active':''}"><i>$</i><span>Condições</span></button>
             </nav>
           ` : ''}
+          ${operationMode ? `
+            <nav class="operation-topnav">
+              <div class="op-brand"><span>🍔</span>TESSARO PDV</div>
+              <button data-page="pdv" class="${active==='pdv'?'active':''}">🧾 PDV <kbd>F2</kbd></button>
+              <button data-page="delivery" class="${active==='delivery'?'active':''}">🛵 Delivery <kbd>F3</kbd></button>
+              <button data-page="pedidosFixos" class="${active==='pedidosFixos'?'active':''}">✓ Clientes Fixos <kbd>F4</kbd></button>
+              <button data-page="fiados" class="${active==='fiados'?'active':''}">💲 Fiados <kbd>F5</kbd></button>
+              <button id="operationAreaChooser" class="exit-area">⇆ Sair desta área</button>
+            </nav>
+          ` : ''}
           <main class="content">${(!master && !representativeMode && ['quotations','orders','suppliers','categories','units','products','history','purchaseIntelligence'].includes(active)) ? `<button class="context-back-btn" id="backToPurchasesHub">← Voltar para Pesquisa de preços</button>` : ''}${content}</main>
         </div>
       </div>
@@ -2580,6 +2600,8 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
     document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{document.querySelector('.client-app')?.classList.remove('menu-open');navigate(b.dataset.page);});
     const areaChooser=document.querySelector('#prototypeAreaChooser');
     if(areaChooser) areaChooser.onclick=()=>{sessionStorage.removeItem('tessaro_prototype_area');prototypeAccessSelector();};
+    const operationAreaChooser=document.querySelector('#operationAreaChooser');
+    if(operationAreaChooser) operationAreaChooser.onclick=()=>{sessionStorage.removeItem('tessaro_prototype_area');prototypeAccessSelector();};
 
     const backToPurchasesHub=document.querySelector('#backToPurchasesHub');
     if(backToPurchasesHub) backToPurchasesHub.onclick=()=>navigate('purchasesHub');
