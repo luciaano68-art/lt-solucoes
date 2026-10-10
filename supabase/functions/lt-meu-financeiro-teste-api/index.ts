@@ -4,6 +4,7 @@ import {slots} from './slots.js';
 const allowedSpaces=new Set(slots.map(s=>s.space));
 import {assertPermission,permissionsOf} from './permissions.js';
 import {manageUsers} from './users.js';
+import {notifyAdmin} from './admin-push.ts';
 import {mutate} from './ledger.js';
 import {chatRows,chatQuery,chatPage} from './chat.js';
 const base=Deno.env.get('SUPABASE_URL')+'/rest/v1/',secret=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -15,7 +16,7 @@ const hex=(a:ArrayBuffer)=>Array.from(new Uint8Array(a)).map(n=>n.toString(16).p
 async function hash(s:string){return hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))}
 async function passwordHash(p:string,s:string){const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveBits']);return hex(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:new TextEncoder().encode(s),iterations:210000},key,256))}
 function equal(a:string,b:string){if(a.length!==b.length)return false;let n=0;for(let i=0;i<a.length;i++)n|=a.charCodeAt(i)^b.charCodeAt(i);return n===0}
-async function identity(req:Request){const token=(req.headers.get('Authorization')||'').replace(/^Bearer /,'');if(!/^[A-Za-z0-9_-]{43}$/.test(token))throw Object.assign(Error('Entre com seu login.'),{status:401});const digest=await hash(token),rows=await db('lt_pf_tokens_internal','?token_hash=eq.'+digest+'&expires_at=gt.'+encodeURIComponent(new Date().toISOString()));if(!rows.length)throw Object.assign(Error('Seu acesso expirou. Entre novamente.'),{status:401});const users=await db('lt_pf_users_internal','?id=eq.'+rows[0].user_id+'&active=eq.true');if(!users.length||!allowedSpaces.has(users[0].space_id))throw Object.assign(Error('Acesso indisponível.'),{status:401});return {id:users[0].id,name:users[0].display_name,space:users[0].space_id,phone:users[0].teste_phone||null,isOwner:users[0].is_owner===true,permissions:users[0].permissions,digest}}
+async function identity(req:Request){const token=(req.headers.get('Authorization')||'').replace(/^Bearer /,'');if(!/^[A-Za-z0-9_-]{43}$/.test(token))throw Object.assign(Error('Entre com seu login.'),{status:401});const digest=await hash(token),rows=await db('lt_pf_tokens_internal','?token_hash=eq.'+digest+'&expires_at=gt.'+encodeURIComponent(new Date().toISOString()));if(!rows.length)throw Object.assign(Error('Seu acesso expirou. Entre novamente.'),{status:401});const users=await db('lt_pf_users_internal','?id=eq.'+rows[0].user_id+'&active=eq.true');if(!users.length||!allowedSpaces.has(users[0].space_id))throw Object.assign(Error('Acesso indisponível.'),{status:401});if(!users[0].is_owner){const owners=await db('lt_pf_users_internal','?space_id=eq.'+users[0].space_id+'&is_owner=eq.true&active=eq.true&teste_deleted_at=is.null');if(!owners.length)throw Object.assign(Error('Acesso indisponível.'),{status:401});}return {id:users[0].id,name:users[0].display_name,space:users[0].space_id,phone:users[0].teste_phone||null,isOwner:users[0].is_owner===true,permissions:users[0].permissions,digest}}
 Deno.serve(async(req:Request)=>{
  if(req.method==='OPTIONS')return new Response('ok',{headers:cors});if(req.method!=='POST')return reply({message:'Método inválido.'},405);
  try{
@@ -27,15 +28,15 @@ Deno.serve(async(req:Request)=>{
    const failures=a.locked_until?0:a.failed_attempts;
    const claim=await db('lt_pf_users_internal','?id=eq.'+a.id+'&failed_attempts=eq.'+a.failed_attempts,'PATCH',{failed_attempts:failures+1,locked_until:failures+1>=8?new Date(Date.now()+900000).toISOString():null});if(!claim.length)return reply({message:'Tente entrar novamente.'},409);
    if(!equal(await passwordHash(password,a.password_salt),a.password_hash))return reply({message:'Login ou senha incorretos.'},401);
-   if(!a.active)return reply({message:'Seu cadastro está aguardando autorização. Assim que for liberado, entre com este login e senha.'},403);
+   if(!a.is_owner){const owners=await db('lt_pf_users_internal','?space_id=eq.'+a.space_id+'&is_owner=eq.true&active=eq.true&teste_deleted_at=is.null');if(!owners.length)return reply({message:'O financeiro compartilhado está pausado ou indisponível. Fale com o responsável.'},403);}if(a.teste_deleted_at)return reply({message:'Este cadastro foi excluído. Fale com o responsável.'},403);
+   if(!a.active)return reply({message:a.teste_paused_at?'Seu acesso está pausado. Fale com o responsável para reativar.':'Seu cadastro está aguardando autorização. Assim que for liberado, entre com este login e senha.'},403);
    await db('lt_pf_users_internal','?id=eq.'+a.id,'PATCH',{failed_attempts:0,locked_until:null});
    const token=btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');await db('lt_pf_tokens_internal','','POST',{token_hash:await hash(token),user_id:a.id,expires_at:new Date(Date.now()+90*86400000).toISOString()});return reply({token,user:{id:a.id,name:a.display_name}});
   }
   const user=await identity(req);
   if(p.spaceId&&p.spaceId!==user.space)return reply({message:'Você não tem acesso a este financeiro.'},403);
   assertPermission(user,p.action);
-  if(['userCreate','userUpdate'].includes(p.action))return reply({message:'Cada acesso de teste tem seu próprio financeiro. Use o convite para cadastrar outra pessoa.'},403);
-  if(['usersList','userCreate','userUpdate'].includes(p.action))return reply(await manageUsers(user,p,{db,passwordHash}));
+  if(['usersList','userCreate','userUpdate'].includes(p.action)){const result=await manageUsers(user,p,{db,passwordHash,approvalRequired:true});if(p.action==='userCreate')void notifyAdmin('cadastro:'+result.user.id,'cadastro');return reply(result);}
   if(p.action==='updatePhone'){const phone=normalizePhone(p.phone);if(!phone)return reply({message:'Informe um telefone válido com DDD.'},400);await db('lt_pf_users_internal','?id=eq.'+user.id+'&space_id=eq.'+user.space,'PATCH',{teste_phone:phone});return reply({phone});}
   if(p.action==='greet'){const previous=await db('lt_pf_chat_internal','?user_id=eq.'+user.id+'&select=message_id&limit=1');const message=await greetingMessage(user,!previous.length);await db('lt_pf_chat_internal','?on_conflict=user_id,message_id','POST',chatRows([message],user),'resolution=ignore-duplicates,return=representation');return reply({ok:true});}
   if(p.action==='chatState')return reply(chatPage(await db('lt_pf_chat_internal',chatQuery(user,p.before))));

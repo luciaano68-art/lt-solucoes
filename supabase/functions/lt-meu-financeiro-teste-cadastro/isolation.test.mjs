@@ -7,13 +7,16 @@ import {normalizePhone} from './phone.js';
 let apiHandler;
 globalThis.Deno={env:{get:k=>k==='SUPABASE_URL'?'https://example.invalid':'server-only'},serve:f=>apiHandler=f};
 const invite='x'.repeat(43),adminKey='y'.repeat(43),hash=async s=>Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s))).toString('hex');
-const source=readFileSync(new URL('./index.ts',import.meta.url),'utf8').replace("import {slots} from './slots.js';",'const slots='+JSON.stringify(slots)+';').replace("import {normalizePhone} from './phone.js';",'const normalizePhone='+normalizePhone.toString()+';').replace(/const inviteHash='[^']+'/,`const inviteHash='${await hash(invite)}'`).replace(/const adminHash='[^']+'/,`const adminHash='${await hash(adminKey)}'`);
+const notifications=[];
+const source=readFileSync(new URL('./index.ts',import.meta.url),'utf8').replace("import {adminPushAction,notifyAdmin} from './admin-push.ts';",'const adminPushAction=async()=>({ok:true});const notifyAdmin=(event,kind)=>globalThis.testNotifications.push({event,kind});').replace("import {slots} from './slots.js';",'const slots='+JSON.stringify(slots)+';').replace("import {normalizePhone} from './phone.js';",'const normalizePhone='+normalizePhone.toString()+';').replace(/const inviteHash='[^']+'/,`const inviteHash='${await hash(invite)}'`).replace(/const adminHash='[^']+'/,`const adminHash='${await hash(adminKey)}'`);
+globalThis.testNotifications=notifications;
 const {handler}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source)).toString('base64'));
 const empty=()=>({accounts:[],entries:[],cards:[],invoices:[],budgets:[],budgetAlerts:[],budgetSettings:{enabled:false}});
 const tables={lt_pf_users_internal:slots.map(s=>({id:s.owner,space_id:s.space,username:s.placeholder,display_name:'Test',active:false,is_owner:true,permissions:{view:true,entries:true,invoices:true,accounts:true,cards:true,budgets:true},failed_attempts:0})),lt_pf_spaces_internal:slots.map(s=>({id:s.space,name:'Test',revision:0,data:empty()})),lt_pf_tokens_internal:[],lt_pf_chat_internal:[],lt_pf_teste_recovery_internal:[]};
 let writes=0;
 async function db(url,options={}){
  const u=new URL(url),name=u.pathname.split('/').at(-1),params=u.searchParams;
+ if(name==='lt_pf_teste_manage_access_internal'){const p=JSON.parse(options.body),user=tables.lt_pf_users_internal.find(u=>u.id===p.p_user_id&&u.username===p.p_username&&!u.teste_deleted_at);if(!user)return Response.json(false);user.active=p.p_action==='resume';user.teste_paused_at=p.p_action==='pause'?new Date().toISOString():p.p_action==='resume'?null:user.teste_paused_at;if(p.p_action==='delete')user.teste_deleted_at=new Date().toISOString();tables.lt_pf_tokens_internal=tables.lt_pf_tokens_internal.filter(t=>t.user_id!==user.id);return Response.json(true);}
  if(name==='lt_pf_teste_reset_password_internal'){const p=JSON.parse(options.body),user=tables.lt_pf_users_internal.find(u=>u.id===p.p_user_id);if(!user)return Response.json(false);Object.assign(user,{password_salt:p.p_salt,password_hash:p.p_hash,failed_attempts:0,locked_until:null});tables.lt_pf_tokens_internal=tables.lt_pf_tokens_internal.filter(t=>t.user_id!==user.id);for(const q of tables.lt_pf_teste_recovery_internal)if(q.user_id===user.id)q.resolved_at=new Date().toISOString();return Response.json(true)}
  const table=tables[name];
  const rows=table.filter(row=>[...params].every(([k,v])=>v==='is.null'?row[k]==null:v.startsWith('eq.')?String(row[k])===v.slice(3):v.startsWith('gt.')?row[k]>v.slice(3):v.startsWith('in.(')?v.slice(4,-1).split(',').includes(row[k]):true));
@@ -23,12 +26,14 @@ async function db(url,options={}){
   if(body.username&&table.some(r=>r.username===body.username&&!rows.includes(r)))return Response.json({}, {status:409});
   rows.forEach(r=>Object.assign(r,body));return Response.json(structuredClone(rows));
  }
- if(method==='POST'){const incoming=Array.isArray(body)?body:[body];for(const row of incoming){if(params.get('on_conflict')==='user_id,message_id'&&table.some(r=>r.user_id===row.user_id&&r.message_id===row.message_id))continue;table.push(row)}return Response.json(body)}
+ if(method==='POST'){const incoming=Array.isArray(body)?body:[body];for(const row of incoming){if(params.get('on_conflict')==='user_id,message_id'&&table.some(r=>r.user_id===row.user_id&&r.message_id===row.message_id))continue;table.push(row)}return Response.json(incoming)}
  if(method==='DELETE'){for(const r of rows)table.splice(table.indexOf(r),1);return Response.json([])}
  throw Error('unexpected method');
 }
 globalThis.fetch=db;
-await import(existsSync(new URL('../api/index.ts',import.meta.url))?'../api/index.ts':'../lt-meu-financeiro-teste-api/index.ts');
+const apiUrl=existsSync(new URL('../api/index.ts',import.meta.url))?new URL('../api/index.ts',import.meta.url):new URL('../lt-meu-financeiro-teste-api/index.ts',import.meta.url);
+const apiSource=readFileSync(apiUrl,'utf8').replace("import {notifyAdmin} from './admin-push.ts';",'const notifyAdmin=(event,kind)=>globalThis.testNotifications.push({event,kind});').replace(/from '(\.\/[^']+)'/g,(_,path)=>'from '+JSON.stringify(new URL(path,apiUrl).href));
+await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(apiSource)).toString('base64'));
 const registration=p=>handler(new Request('https://example.invalid',{method:'POST',body:JSON.stringify({invite,action:'register',name:'Test',password:'Test12345',phone:'4999999000'+(p.username?.match(/\d$/)?.[0]||'0'),confirmedIdentity:true,...p})}),db);
 const api=async(body,token)=>{const r=await apiHandler(new Request('https://example.invalid',{method:'POST',headers:token?{Authorization:'Bearer '+token}:{},body:JSON.stringify(body)}));return {status:r.status,body:await r.json()}};
 test('five independent registrations; approval required; sixth blocked; data and chats isolated',async()=>{
@@ -43,6 +48,8 @@ test('five independent registrations; approval required; sixth blocked; data and
  assert.equal((await registration({username:'person0'})).status,409);
  const results=await Promise.all(Array.from({length:4},(_,i)=>registration({username:'person'+(i+1),spaceId:'someone-else',is_owner:false})));
  assert.deepEqual(results.map(r=>r.status),[200,200,200,200]);
+ assert.equal(notifications.filter(n=>n.kind==='cadastro').length,5);
+ for(const action of ['pushSubscribe','pushTest','pushPublicKey'])assert.equal((await registration({action,adminKey:invite})).status,403);
  assert.equal(new Set(tables.lt_pf_users_internal.map(u=>u.space_id)).size,5);
  assert.equal(tables.lt_pf_users_internal.every(u=>!u.active),true);
  assert.equal((await registration({username:'sixth'})).status,409);
@@ -60,15 +67,37 @@ test('five independent registrations; approval required; sixth blocked; data and
   const greetings=tables.lt_pf_chat_internal.filter(m=>m.user_id===member.id);assert.equal(greetings.length,1);assert.match(greetings[0].text,/Bem-vindo/);
   const other=slots.find(s=>s.space!==member.space_id);
   assert.equal((await api({action:'state',spaceId:other.space},login.body.token)).status,403);
-  assert.equal((await api({action:'userCreate'},login.body.token)).status,403);
+  assert.equal((await api({action:'userCreate'},login.body.token)).status,400);
  }
  const id=crypto.randomUUID();assert.equal((await api({action:'account',id,name:'Private account',openingCents:5000},tokens[0])).status,200);
  for(let i=0;i<5;i++){const own=await api({action:'state'},tokens[i]);assert.equal(own.body.data.accounts.length,i===0?1:0);}
  assert.equal((await api({action:'chatAppend',messages:[{id:crypto.randomUUID(),role:'me',text:'Private message',time:new Date().toISOString()}]},tokens[0])).status,200);
  for(let i=1;i<5;i++){const r=await api({action:'chatState'},tokens[i]);assert.equal(r.status,200);assert.equal(JSON.stringify(r.body).includes('Private message'),false);}
+ const partnerId=crypto.randomUUID(),readOnly={view:true,entries:false,invoices:false,accounts:false,cards:false,budgets:false};
+ const partnerFields={action:'userCreate',id:partnerId,name:'Partner',username:'partner',password:'Partner123',phone:'49988880001',permissions:readOnly};
+ assert.equal((await api({...partnerFields,isOwner:true},tokens[0])).status,403);
+ const createdPartner=await api({...partnerFields,spaceId:slots[0].space},tokens[0]);assert.equal(createdPartner.status,200,JSON.stringify(createdPartner.body));assert.equal(createdPartner.body.user.active,false);
+ assert.equal((await api({action:'login',username:'partner',password:'Partner123'})).status,403);
+ assert.equal((await registration({action:'approve',adminKey,userId:partnerId})).status,200);
+ const partnerLogin=await api({action:'login',username:'partner',password:'Partner123'});assert.equal(partnerLogin.status,200);
+ const partnerState=await api({action:'state'},partnerLogin.body.token);assert.equal(partnerState.body.data.accounts[0].name,'Private account');
+ assert.equal((await api({action:'entry'},partnerLogin.body.token)).status,403);
+ assert.equal((await api({action:'userCreate'},partnerLogin.body.token)).status,403);
+ assert.equal(JSON.stringify((await api({action:'chatState'},partnerLogin.body.token)).body).includes('Private message'),false);
+ assert.equal((await api({...partnerFields,id:crypto.randomUUID(),username:'another-partner'},tokens[0])).status,409);
+ assert.equal((await api({action:'userUpdate',id:partnerId,version:1,name:'Partner',password:'',active:false,permissions:readOnly},tokens[0])).status,403);
  const outsider={...tables.lt_pf_users_internal[0],id:crypto.randomUUID(),username:'outsider',space_id:'outside'};tables.lt_pf_users_internal.push(outsider);
  assert.equal((await api({action:'login',username:'outsider',password:'Test12345'})).status,401);
  const member=tables.lt_pf_users_internal.find(u=>u.username==='person0');
+ const financeBeforePause=JSON.stringify(tables.lt_pf_spaces_internal);
+ assert.equal((await registration({action:'pause',adminKey:invite,userId:tables.lt_pf_users_internal.find(u=>u.username==='person1').id})).status,403);
+ assert.equal((await registration({action:'pause',adminKey,userId:'outside'})).status,404);
+ assert.equal((await registration({action:'pause',adminKey,userId:tables.lt_pf_users_internal.find(u=>u.username==='person1').id})).status,200);
+ assert.equal((await api({action:'state'},tokens[1])).status,401);
+ const paused=await api({action:'login',username:'person1',password:'Test12345'});assert.equal(paused.status,403);assert.match(paused.body.message,/pausado/);
+ assert.equal((await registration({action:'resume',adminKey,userId:tables.lt_pf_users_internal.find(u=>u.username==='person1').id})).status,200);
+ assert.equal((await api({action:'state'},tokens[1])).status,401);
+ const resumed=await api({action:'login',username:'person1',password:'Test12345'});assert.equal(resumed.status,200);tokens[1]=resumed.body.token;assert.equal(JSON.stringify(tables.lt_pf_spaces_internal),financeBeforePause);
  const otherMember=tables.lt_pf_users_internal.find(u=>u.username==='person1'),otherPhone=otherMember.teste_phone;
  assert.equal((await api({action:'updatePhone',phone:'123'},tokens[0])).status,400);
  assert.equal((await api({action:'updatePhone',phone:'(49) 98888-0000',userId:otherMember.id},tokens[0])).status,200);
@@ -93,5 +122,13 @@ test('five independent registrations; approval required; sixth blocked; data and
  member.active=false;assert.equal((await api({action:'state'},renewed.body.token)).status,401);
  assert.equal((await registration({action:'resetPassword',adminKey,userId:member.id,password:'Pending123'})).status,200);assert.equal(member.active,false);
  assert.equal((await api({action:'login',username:'person0',password:'Pending123'})).status,403);
- const list=await registration({action:'adminList',adminKey});const json=await list.json();assert.equal(json.users.length,5);assert.equal(JSON.stringify(json).includes('password_hash'),false);
+ const financeBeforeDelete=JSON.stringify(tables.lt_pf_spaces_internal);
+ assert.equal((await registration({action:'deleteRegistration',adminKey,userId:tables.lt_pf_users_internal.find(u=>u.username==='person4').id,confirmed:false})).status,400);
+ assert.equal((await registration({action:'deleteRegistration',adminKey,userId:tables.lt_pf_users_internal.find(u=>u.username==='person4').id,confirmed:true})).status,200);
+ assert.equal((await api({action:'state'},tokens[4])).status,401);
+ assert.equal((await api({action:'login',username:'person4',password:'Test12345'})).status,403);
+ assert.equal((await registration({action:'approve',adminKey,userId:tables.lt_pf_users_internal.find(u=>u.username==='person4').id})).status,404);
+ assert.equal(JSON.stringify(tables.lt_pf_spaces_internal),financeBeforeDelete);
+ assert.equal((await api({action:'state'},partnerLogin.body.token)).status,401);
+ const list=await registration({action:'adminList',adminKey});const json=await list.json();assert.equal(json.users.length,6);assert.equal(json.users.find(u=>u.id===partnerId).shared,true);assert.equal(JSON.stringify(json).includes('password_hash'),false);
 });

@@ -1,10 +1,11 @@
 import {assertPermission,validatePermissions,publicUser} from './permissions.js';
+import {normalizePhone} from './phone.js';
 const fail=(message,status=400)=>{throw Object.assign(Error(message),{status})};
 const uuid=x=>typeof x==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x);
 const columns='id,username,display_name,active,is_owner,permissions,access_version';
-export async function manageUsers(user,p,{db,passwordHash}){
+export async function manageUsers(user,p,{db,passwordHash,approvalRequired=false}){
  assertPermission(user,p.action);
- if(p.action==='usersList')return {users:(await db('lt_pf_users_internal','?space_id=eq.'+user.space+'&select='+columns+'&order=display_name.asc')).map(publicUser)};
+ if(p.action==='usersList')return {users:(await db('lt_pf_users_internal','?space_id=eq.'+user.space+'&teste_deleted_at=is.null&select='+columns+'&order=display_name.asc')).map(publicUser)};
  if(!uuid(p.id))fail('Identificador de usuário inválido.');
  const name=String(p.name||'').trim();if(!name||name.length>80)fail('Informe o nome (até 80 caracteres).');
  if(p.isOwner!==undefined||p.space_id!==undefined||p.space!==undefined)fail('Não é permitido alterar o administrador ou o financeiro.',403);
@@ -13,13 +14,18 @@ export async function manageUsers(user,p,{db,passwordHash}){
  if(p.action==='userCreate'&&existing)fail('Este usuário já foi cadastrado. Atualize a lista.',409);
  if(p.action==='userUpdate'&&!existing)fail('Usuário não encontrado neste financeiro.',404);
  if(existing?.is_owner)fail('O acesso do administrador é protegido e não pode ser alterado nesta tela.',403);
+ if(existing?.teste_deleted_at)fail('Este cadastro foi excluído.',404);
+ if(approvalRequired&&p.action==='userUpdate'&&(p.active!==existing.active||p.password))fail('A ativação e a troca de senha dependem do gestor. Nesta tela, altere apenas o nome e as permissões.',403);
  const password=typeof p.password==='string'?p.password:'';
  if((p.action==='userCreate'||password)&& (password.length<8||password.length>100))fail('A senha deve ter de 8 a 100 caracteres.');
  let passwordFields={};if(password){const salt=crypto.randomUUID();passwordFields={password_salt:salt,password_hash:await passwordHash(password,salt),failed_attempts:0,locked_until:null};}
  if(p.action==='userCreate'){
+  const phone=approvalRequired?normalizePhone(p.phone):null;if(approvalRequired&&!phone)fail('Informe o telefone com DDD.');
+  if(approvalRequired&&(await db('lt_pf_users_internal','?space_id=eq.'+user.space+'&teste_deleted_at=is.null&select=id')).length>=2)fail('Este financeiro já tem o titular e um acesso compartilhado.',409);
   const username=String(p.username||'').trim().toLowerCase();if(!/^[a-z0-9][a-z0-9._-]{2,59}$/.test(username))fail('Login: use de 3 a 60 letras sem acentos, números, ponto, traço ou sublinhado.');
+  if(approvalRequired&&username.startsWith('pending.'))fail('Escolha outro login.');
   if((await db('lt_pf_users_internal','?username=eq.'+encodeURIComponent(username)+'&select=id')).length)fail('Este login já está em uso. Escolha outro.',409);
-  const created=await db('lt_pf_users_internal','','POST',{id:p.id,username,display_name:name,space_id:user.space,active:true,is_owner:false,permissions,access_version:1,...passwordFields});
+  const created=await db('lt_pf_users_internal','','POST',{id:p.id,username,display_name:name,space_id:user.space,active:!approvalRequired,is_owner:false,permissions,access_version:1,...(phone?{teste_phone:phone}:{}),...passwordFields});
   return {user:publicUser(created[0])};
  }
  if(!Number.isSafeInteger(p.version)||p.version!==existing.access_version)fail('Este acesso mudou em outro aparelho. Atualize antes de salvar.',409);
