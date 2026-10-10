@@ -98,6 +98,20 @@ test('five independent registrations; approval required; sixth blocked; data and
  assert.equal(JSON.stringify((await api({action:'chatState'},partnerLogin.body.token)).body).includes('Private message'),false);
  assert.equal((await api({...partnerFields,id:crypto.randomUUID(),username:'another-partner'},tokens[0])).status,409);
  assert.equal((await api({action:'userUpdate',id:partnerId,version:1,name:'Partner',password:'',active:false,permissions:readOnly},tokens[0])).status,403);
+ // Same-household privacy is enforced by the HTTP API, including write responses.
+ const partnerRow=tables.lt_pf_users_internal.find(u=>u.id===partnerId);partnerRow.permissions={view:true,entries:true,invoices:true,accounts:true,cards:true,budgets:true};
+ const privateOwner=crypto.randomUUID(),privatePartner=crypto.randomUUID();
+ assert.equal((await api({action:'account',id:privateOwner,name:'Owner personal',openingCents:11111,visibility:'private'},tokens[0])).status,200);
+ assert.equal((await api({action:'account',id:privatePartner,name:'Partner personal',openingCents:22222,visibility:'private'},partnerLogin.body.token)).status,200);
+ let projected=await api({action:'state'},tokens[0]);assert.equal(projected.body.data.accounts.some(a=>a.id===privatePartner),false);assert.equal(JSON.stringify(projected.body).includes('22222'),false);
+ projected=await api({action:'state'},partnerLogin.body.token);assert.equal(projected.body.data.accounts.some(a=>a.id===privateOwner),false);assert.equal(JSON.stringify(projected.body).includes('11111'),false);
+ const privateTransfer={action:'transfer',id:crypto.randomUUID(),fromAccountId:privatePartner,toAccountId:privateOwner,cents:1000,date:'2026-10-10'};
+ const sent=await api(privateTransfer,partnerLogin.body.token);assert.equal(sent.status,200);assert.equal(sent.body.data.accounts.some(a=>a.id===privateOwner),false);
+ assert.equal((await api(privateTransfer,partnerLogin.body.token)).status,200);assert.equal((await api({...privateTransfer,id:crypto.randomUUID()},tokens[0])).status,403);
+ assert.equal((await api({...privateTransfer,id:crypto.randomUUID(),fromAccountId:privateOwner,toAccountId:privatePartner},tokens[0])).status,200);
+ assert.equal((await api({...privateTransfer,id:crypto.randomUUID()},tokens[1])).status,400);
+ assert.equal((await api({action:'account',id:privatePartner,name:'Attempt',openingCents:1,version:1,visibility:'shared'},tokens[0])).status,403);
+ assert.equal((await api({action:'chatState'},tokens[0])).status,200);partnerRow.permissions=readOnly;
  const outsider={...tables.lt_pf_users_internal[0],id:crypto.randomUUID(),username:'outsider',space_id:'outside'};tables.lt_pf_users_internal.push(outsider);
  assert.equal((await api({action:'login',username:'outsider',password:'Test12345'})).status,401);
  const member=tables.lt_pf_users_internal.find(u=>u.username==='person0');

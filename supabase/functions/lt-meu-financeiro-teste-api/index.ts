@@ -1,3 +1,4 @@
+import {visibleData,privacyCutoff} from './privacy.js';
 import {normalizePhone} from './phone.js';
 import {greetingMessage} from './greeting.js';
 import {slots} from './slots.js';
@@ -39,14 +40,19 @@ Deno.serve(async(req:Request)=>{
   if(['usersList','userCreate','userUpdate'].includes(p.action)){const result=await manageUsers(user,p,{db,passwordHash,approvalRequired:true});if(p.action==='userCreate')void notifyAdmin('cadastro:'+result.user.id,'cadastro');return reply(result);}
   if(p.action==='updatePhone'){const phone=normalizePhone(p.phone);if(!phone)return reply({message:'Informe um telefone válido com DDD.'},400);await db('lt_pf_users_internal','?id=eq.'+user.id+'&space_id=eq.'+user.space,'PATCH',{teste_phone:phone});return reply({phone});}
   if(p.action==='greet'){const previous=await db('lt_pf_chat_internal','?user_id=eq.'+user.id+'&select=message_id&limit=1');const message=await greetingMessage(user,!previous.length);await db('lt_pf_chat_internal','?on_conflict=user_id,message_id','POST',chatRows([message],user),'resolution=ignore-duplicates,return=representation');return reply({ok:true});}
-  if(p.action==='chatState')return reply(chatPage(await db('lt_pf_chat_internal',chatQuery(user,p.before))));
+  if(p.action==='chatState'){
+   const rows=await db('lt_pf_spaces_internal','?id=eq.'+user.space),cutoff=privacyCutoff(rows[0]?.data||{},user);
+   const page=chatPage(await db('lt_pf_chat_internal',chatQuery(user,p.before)));
+   if(cutoff)page.messages=page.messages.map(m=>m.time<=cutoff?{...m,text:'Mensagem anterior à configuração das contas particulares.'}:m);
+   return reply({...page,redactBefore:cutoff});
+  }
   if(p.action==='chatAppend'){await db('lt_pf_chat_internal','?on_conflict=user_id,message_id','POST',chatRows(p.messages,user),'resolution=ignore-duplicates,return=representation');return reply({ok:true})}
   if(p.action==='logout'){await db('lt_pf_tokens_internal','?token_hash=eq.'+user.digest,'DELETE');return reply({ok:true})}
-  if(p.action==='state'){const spaces=await db('lt_pf_spaces_internal','?id=eq.'+user.space);if(!spaces.length)return reply({message:'Financeiro indisponível.'},404);const people=await db('lt_pf_users_internal','?space_id=eq.'+user.space+'&active=eq.true&select=id,display_name');return reply({space:{id:user.space,name:spaces[0].name},revision:spaces[0].revision,data:permissionsOf(user).view?spaces[0].data:{accounts:[],entries:[],cards:[],invoices:[]},user:{id:user.id,name:user.name,phone:user.phone,isOwner:user.isOwner,permissions:permissionsOf(user)},people})}
+  if(p.action==='state'){const spaces=await db('lt_pf_spaces_internal','?id=eq.'+user.space);if(!spaces.length)return reply({message:'Financeiro indisponível.'},404);const people=await db('lt_pf_users_internal','?space_id=eq.'+user.space+'&active=eq.true&select=id,display_name');return reply({space:{id:user.space,name:spaces[0].name},revision:spaces[0].revision,redactBefore:privacyCutoff(spaces[0].data,user),data:permissionsOf(user).view?visibleData(spaces[0].data,user):{accounts:[],entries:[],cards:[],invoices:[]},user:{id:user.id,name:user.name,phone:user.phone,isOwner:user.isOwner,permissions:permissionsOf(user)},people})}
   for(let retry=0;retry<6;retry++){
    const rows=await db('lt_pf_spaces_internal','?id=eq.'+user.space),space=rows[0];if(!space)throw Object.assign(Error('Financeiro indisponível.'),{status:404});
    const next=mutate(space.data,p,user,new Date().toISOString());
-   const saved=await db('lt_pf_spaces_internal','?id=eq.'+user.space+'&revision=eq.'+space.revision,'PATCH',{data:next,revision:space.revision+1});if(saved.length)return reply({ok:true,revision:saved[0].revision,data:saved[0].data});
+   const saved=await db('lt_pf_spaces_internal','?id=eq.'+user.space+'&revision=eq.'+space.revision,'PATCH',{data:next,revision:space.revision+1});if(saved.length)return reply({ok:true,revision:saved[0].revision,data:visibleData(saved[0].data,user),redactBefore:privacyCutoff(saved[0].data,user)});
   }
   return reply({message:'Outro aparelho está salvando. Tente novamente.'},409);
  }catch(e){return reply({message:e.message||'Não foi possível concluir.'},e.status||400)}

@@ -16,7 +16,7 @@ export function mutateInvestment(state,p,user,stamp){
   if(typeof p.name!=='string'||!p.name.trim()||p.name.length>80||!cents(p.cents,true))throw Error('Confira o nome e o saldo inicial da aplicação.');
   const existing=data.investments.find(i=>i.id===p.id);
   if(existing){if(existing.name===p.name.trim()&&existing.openingCents===p.cents)return state;throw Object.assign(Error('Esta aplicação já foi cadastrada.'),{status:409})}
-  if(data.investments.some(i=>i.name.toLocaleLowerCase()===p.name.trim().toLocaleLowerCase()))throw Error('Já existe uma aplicação com esse nome.');
+  if(data.investments.some(i=>i.name.toLocaleLowerCase()===p.name.trim().toLocaleLowerCase()&&(i.ownerUserId||null)===(p.visibility==='private'?user.id:null)))throw Error('Já existe uma aplicação com esse nome.');
   data.investments.push({id:p.id,name:p.name.trim(),openingCents:p.cents,balanceCents:p.cents,checkpointCents:p.cents,checkpointDate:p.date,sinceDeposits:0,sinceWithdrawals:0,version:1,createdBy:user.name,createdAt:stamp});return data;
  }
  if(!['investmentDeposit','investmentWithdraw','investmentBalance'].includes(p.action))throw Error('Operação de investimento inválida.');

@@ -1,3 +1,4 @@
+import {guardPrivacy,stampPrivacy,mutateTransfer,transferAccountDelta,visibleData} from './privacy.js';
 import {mutateBudget,updateBudgetAlerts} from './budget.js';
 import {mutateInvestment,investmentAccountDelta} from './investments.js';
 import {creditFields,ensureInvoice,unlockedInvoice,mutateCredit} from './credit.js';
@@ -9,6 +10,7 @@ export function validateEntry(p,state){
  if(!['paid','pending'].includes(p.status))throw Error('Informe se foi pago/recebido ou se está pendente.');
  if(!['casal','luciano','yasmin'].includes(p.scope))throw Error('Escolha casal, Luciano ou Yasmin.');
  if(typeof p.description!=='string'||!p.description.trim()||p.description.length>300)throw Error('Informe a descrição (até 300 caracteres).');
+ if(/^(?:(?:estou|to|vou)\s+)?(?:transfer\w*|transfir\w*)\b/.test(p.description.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()))throw Error('Transferência entre contas não é despesa nem receita. Atualize o aplicativo e use Transferir entre contas.');
  if(typeof p.category!=='string'||!p.category.trim()||p.category.length>80)throw Error('Informe a categoria.');
  if(!p.cardId&&!state.accounts.some(a=>a.id===p.accountId&&!a.deleted))throw Error('Escolha uma conta deste financeiro.');
  if(!p.cardId&&p.status==='paid'&&!validDate(p.paidDate||p.date))throw Error('Informe a data do pagamento.');
@@ -16,14 +18,27 @@ export function validateEntry(p,state){
 }
 export function summarize(state,month){
  const entries=state.entries.filter(e=>!e.deleted),paid=entries.filter(e=>e.status==='paid');
- const accounts=state.accounts.filter(a=>!a.deleted).map(a=>({...a,balance:a.openingCents+paid.filter(e=>e.accountId===a.id).reduce((v,e)=>v+(e.kind==='income'?e.cents:-e.cents),0)+investmentAccountDelta(state,a.id)}));
+ const accounts=state.accounts.filter(a=>!a.deleted).map(a=>({...a,balance:a.openingCents+paid.filter(e=>e.accountId===a.id).reduce((v,e)=>v+(e.kind==='income'?e.cents:-e.cents),0)+investmentAccountDelta(state,a.id)+transferAccountDelta(state,a.id)}));
  const period=entries.filter(e=>(e.status==='paid'?e.paidDate:e.dueDate).startsWith(month));
  const sum=(kind,status)=>period.filter(e=>e.kind===kind&&e.status===status).reduce((v,e)=>v+e.cents,0);
  return {balance:accounts.reduce((v,a)=>v+a.balance,0),income:sum('income','paid'),expense:sum('expense','paid'),payable:sum('expense','pending'),receivable:sum('income','pending'),accounts};
 }
 export function mutate(state,p,user,now){
+ guardPrivacy(state,p,user);
+ const stamp=now||new Date().toISOString();
+ if(p.action==='transfer')return mutateTransfer(state,p,user,stamp);
+ return stampPrivacy(mutateUnchecked(state,p,user,stamp),state,p,user,stamp);
+}
+function privateBudgetAlerts(data,previous,user,stamp){
+ if(!(data.accounts||[]).some(a=>a.ownerUserId))return updateBudgetAlerts(data,previous,user,stamp);
+ const view=visibleData(data,user),before=visibleData(previous,user),known=new Set((view.budgetAlerts||[]).map(a=>a.id));
+ const result=updateBudgetAlerts(view,before,user,stamp);
+ data.budgetAlerts||=[];for(const a of result.budgetAlerts||[])if(!known.has(a.id))data.budgetAlerts.push({...a,ownerUserId:user.id});
+ return data;
+}
+function mutateUnchecked(state,p,user,now){
  if(p.action.startsWith('investment'))return mutateInvestment(state,p,user,now||new Date().toISOString());
- const data=structuredClone(state),stamp=now||new Date().toISOString();data.cards||=[];data.invoices||=[];if(p.action.startsWith('budget'))return updateBudgetAlerts(mutateBudget(data,p,user,stamp),state,user,stamp);if(p.action==='card'||p.action==='ensureInvoices'||p.action.startsWith('invoice'))return mutateCredit(data,p,user,stamp);
+ const data=structuredClone(state),stamp=now||new Date().toISOString();data.cards||=[];data.invoices||=[];if(p.action.startsWith('budget'))return privateBudgetAlerts(mutateBudget(data,p,user,stamp),state,user,stamp);if(p.action==='card'||p.action==='ensureInvoices'||p.action.startsWith('invoice'))return mutateCredit(data,p,user,stamp);
  const uuid=x=>typeof x==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x);
  if(p.action==='account'){
   if(!uuid(p.id)||typeof p.name!=='string'||!p.name.trim()||p.name.length>80||!Number.isSafeInteger(p.openingCents)||Math.abs(p.openingCents)>100000000000)throw Error('Confira o nome e o saldo inicial da conta.');
@@ -41,6 +56,6 @@ export function mutate(state,p,user,now){
   e.version++;e.updatedBy=user.name;e.updatedAt=stamp;
  }else throw Error('Ação não reconhecida.');
  const old=state.entries.find(e=>e.id===p.id),updated=data.entries.find(e=>e.id===p.id);for(const id of new Set([old?.invoiceId,updated?.invoiceId].filter(Boolean))){let bill=data.invoices.find(b=>b.id===id);if(!bill&&updated?.cardId){const card=data.cards.find(c=>c.id===updated.cardId);bill=ensureInvoice(data,card,id.slice(card.id.length+1),stamp);}if(bill){bill.version++;bill.updatedBy=user.name;bill.updatedAt=stamp;}}
- return updateBudgetAlerts(data,state,user,stamp);
+ return privateBudgetAlerts(data,state,user,stamp);
 }
 
