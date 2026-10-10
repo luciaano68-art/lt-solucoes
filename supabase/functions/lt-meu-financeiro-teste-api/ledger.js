@@ -1,3 +1,4 @@
+import {mutateInstallmentPurchase} from './installments.js';
 import {mutateFixedExpense} from './fixed-expenses.js';
 import {guardPrivacy,stampPrivacy,mutateTransfer,transferAccountDelta,visibleData} from './privacy.js';
 import {mutateBudget,updateBudgetAlerts} from './budget.js';
@@ -26,6 +27,7 @@ export function summarize(state,month){
 }
 export function mutate(state,p,user,now){
  guardPrivacy(state,p,user);
+ if(p.action==='installmentPurchase')return mutateInstallmentPurchase(state,p,user,now||new Date().toISOString());
  if(p.action.startsWith('fixedExpense'))return mutateFixedExpense(state,p,user,now||new Date().toISOString());
  const stamp=now||new Date().toISOString();
  if(p.action==='transfer')return mutateTransfer(state,p,user,stamp);
