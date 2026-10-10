@@ -192,3 +192,38 @@ body{background:radial-gradient(ellipse at top left,#eaf2ed 0,transparent 50%),v
 @media(min-width:680px){.invoice-grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.invoice-view .card-mini{padding:20px}.invoice-view .card-mini .card-limit{max-width:620px}.invoice-tile .invoice-total{font-size:30px}}
 @media(max-width:380px){.invoice-view .invoice-tile{padding:15px}.invoice-tile-head h3{font-size:17px}.invoice-tile .invoice-total{font-size:26px}.invoice-view .card-limit b{font-size:12px}.invoice-tile .invoice-actions button{font-size:11px}}
 
+/* Despesas fixas: janela compacta com formulário e lista bem separados. */
+#fixedEditor{padding:0;max-width:580px;border-radius:22px;max-height:min(88dvh,850px)}
+#fixedEditor .fixed-dialog-head{position:sticky;top:0;z-index:2;background:#fff;padding:17px 20px;border-bottom:1px solid var(--line);gap:10px}
+#fixedEditor .fixed-dialog-head h2{font-size:22px;line-height:1.3;margin:2px 0 0;letter-spacing:-.5px}
+.fixed-dialog-eyebrow{font-size:10px;letter-spacing:.35px;text-transform:uppercase;color:var(--muted)}
+#fixedEditor #closeFixed{width:44px;height:44px;min-width:44px;min-height:44px;flex:none;font-size:25px;background:#f0f6f2;border-radius:13px;padding:0}
+.fixed-dialog-content{padding:18px 20px 22px}
+.fixed-list-heading{display:flex;justify-content:space-between;align-items:center;margin:0 0 9px;font-size:11px;font-weight:650;letter-spacing:.4px;text-transform:uppercase;color:var(--muted)}
+.fixed-list-heading span:last-child{background:var(--mint);color:var(--green);padding:1px 7px;border-radius:7px}
+.fixed-expense-tile{padding:14px 15px;background:#f7fbf8;border:1px solid #dae8df;border-radius:15px;margin-bottom:10px}
+.fixed-tile-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.fixed-tile-heading>strong{font-size:15px;line-height:1.4;overflow-wrap:anywhere}
+.fixed-frequency{font-size:10px;font-weight:600;flex:none;background:#e7f2ec;color:var(--green);padding:3px 7px;border-radius:6px}
+.fixed-tile-value{font-size:23px;font-weight:750;letter-spacing:-.5px;color:var(--green);margin:5px 0 8px;font-variant-numeric:tabular-nums}
+.fixed-tile-value small{font-size:11px;font-weight:400;letter-spacing:0;color:var(--muted);margin-left:6px}
+.fixed-tile-meta{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:11px;color:var(--muted);line-height:1.5}
+.fixed-tile-meta b{color:var(--ink);font-weight:600}
+.fixed-tile-meta span{overflow-wrap:anywhere;min-width:0}
+.fixed-tile-actions{border-top:1px solid #e5eee8;margin-top:9px;padding-top:5px;display:flex;justify-content:flex-end}
+#fixedEditor .fixed-stop{min-height:36px;font-size:11px;padding:7px 0 4px;color:#98615f;background:transparent;font-weight:500}
+.fixed-empty{padding:10px 0;margin-bottom:0;font-size:12px}
+#fixedEditor #fixedForm{margin-top:19px;padding-top:18px;border-top:1px solid var(--line)}
+.fixed-form-heading h3{font-size:17px;margin:0 0 3px}
+.fixed-form-heading p{font-size:12px;margin-bottom:14px;color:var(--muted)}
+#fixedEditor label{font-size:12px;line-height:1.4;margin:13px 0 6px}
+#fixedEditor input,#fixedEditor select{min-height:46px;padding:10px 11px;border-radius:11px;font-size:16px}
+.fixed-form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.fixed-form-grid>div{min-width:0}
+.fixed-form-grid input[type=month]{min-width:0;max-width:100%;width:100%}
+.fixed-optional{font-size:10px;font-weight:400;color:var(--muted)}
+#fixedEditor #fixedAccountHelp{padding:11px 12px;font-size:11px;line-height:1.6;border-radius:11px;background:#f0f6f2;margin:16px 0 0}
+#fixedEditor #saveFixed{font-size:14px;min-height:48px;margin-top:15px;border-radius:12px}
+#fixedEditor #fixedError{font-size:12px;margin:9px 0 0}
+@media(max-width:380px){#fixedEditor{width:calc(100% - 20px)}#fixedEditor .fixed-dialog-head{padding:14px 16px}.fixed-dialog-content{padding:14px 16px 18px}#fixedEditor .fixed-dialog-head h2{font-size:20px}.fixed-form-grid{gap:9px}.fixed-dialog-eyebrow{font-size:9px}}
+
