@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 import {stripTypeScriptTypes} from 'node:module';
 import {slots} from './slots.js';
+import {normalizePhone} from './phone.js';
 let apiHandler;
 globalThis.Deno={env:{get:k=>k==='SUPABASE_URL'?'https://example.invalid':'server-only'},serve:f=>apiHandler=f};
 const invite='x'.repeat(43),adminKey='y'.repeat(43),hash=async s=>Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s))).toString('hex');
-const source=readFileSync(new URL('./index.ts',import.meta.url),'utf8').replace("import {slots} from './slots.js';",'const slots='+JSON.stringify(slots)+';').replace(/const inviteHash='[^']+'/,`const inviteHash='${await hash(invite)}'`).replace(/const adminHash='[^']+'/,`const adminHash='${await hash(adminKey)}'`);
+const source=readFileSync(new URL('./index.ts',import.meta.url),'utf8').replace("import {slots} from './slots.js';",'const slots='+JSON.stringify(slots)+';').replace("import {normalizePhone} from './phone.js';",'const normalizePhone='+normalizePhone.toString()+';').replace(/const inviteHash='[^']+'/,`const inviteHash='${await hash(invite)}'`).replace(/const adminHash='[^']+'/,`const adminHash='${await hash(adminKey)}'`);
 const {handler}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source)).toString('base64'));
 const empty=()=>({accounts:[],entries:[],cards:[],invoices:[],budgets:[],budgetAlerts:[],budgetSettings:{enabled:false}});
 const tables={lt_pf_users_internal:slots.map(s=>({id:s.owner,space_id:s.space,username:s.placeholder,display_name:'Test',active:false,is_owner:true,permissions:{view:true,entries:true,invoices:true,accounts:true,cards:true,budgets:true},failed_attempts:0})),lt_pf_spaces_internal:slots.map(s=>({id:s.space,name:'Test',revision:0,data:empty()})),lt_pf_tokens_internal:[],lt_pf_chat_internal:[],lt_pf_teste_recovery_internal:[]};
@@ -28,11 +29,15 @@ async function db(url,options={}){
 }
 globalThis.fetch=db;
 await import(existsSync(new URL('../api/index.ts',import.meta.url))?'../api/index.ts':'../lt-meu-financeiro-teste-api/index.ts');
-const registration=p=>handler(new Request('https://example.invalid',{method:'POST',body:JSON.stringify({invite,action:'register',name:'Test',password:'Test12345',...p})}),db);
+const registration=p=>handler(new Request('https://example.invalid',{method:'POST',body:JSON.stringify({invite,action:'register',name:'Test',password:'Test12345',phone:'4999999000'+(p.username?.match(/\d$/)?.[0]||'0'),confirmedIdentity:true,...p})}),db);
 const api=async(body,token)=>{const r=await apiHandler(new Request('https://example.invalid',{method:'POST',headers:token?{Authorization:'Bearer '+token}:{},body:JSON.stringify(body)}));return {status:r.status,body:await r.json()}};
 test('five independent registrations; approval required; sixth blocked; data and chats isolated',async()=>{
  assert.equal((await registration({invite:'wrong',username:'wrong'})).status,403);assert.equal(writes,0);
  assert.equal((await registration({username:'bad',password:'short'})).status,400);assert.equal(writes,0);
+ assert.equal((await registration({username:'bad',phone:''})).status,400);assert.equal(writes,0);
+ assert.equal(normalizePhone('(49) 99999-0000'),'5549999990000');
+ assert.equal(normalizePhone('+55 (49) 99999-0000'),'5549999990000');
+ assert.equal(normalizePhone('123'),null);
  // Duplicate username must not consume another slot.
  assert.equal((await registration({invite:null,username:'person0'})).status,200);
  assert.equal((await registration({username:'person0'})).status,409);
@@ -64,13 +69,21 @@ test('five independent registrations; approval required; sixth blocked; data and
  const outsider={...tables.lt_pf_users_internal[0],id:crypto.randomUUID(),username:'outsider',space_id:'outside'};tables.lt_pf_users_internal.push(outsider);
  assert.equal((await api({action:'login',username:'outsider',password:'Test12345'})).status,401);
  const member=tables.lt_pf_users_internal.find(u=>u.username==='person0');
+ const otherMember=tables.lt_pf_users_internal.find(u=>u.username==='person1'),otherPhone=otherMember.teste_phone;
+ assert.equal((await api({action:'updatePhone',phone:'123'},tokens[0])).status,400);
+ assert.equal((await api({action:'updatePhone',phone:'(49) 98888-0000',userId:otherMember.id},tokens[0])).status,200);
+ assert.equal(member.teste_phone,'5549988880000');assert.equal(otherMember.teste_phone,otherPhone);
+ assert.equal((await registration({action:'setPhone',adminKey:invite,userId:member.id,phone:'49999990000'})).status,403);
+ assert.equal((await registration({action:'setPhone',adminKey,userId:'outside',phone:'49999990000'})).status,404);
  const before=JSON.stringify(tables.lt_pf_spaces_internal),passwordBefore=member.password_hash;
- assert.equal((await registration({action:'requestReset',username:'person0',invite:null})).status,200);assert.equal(member.password_hash,passwordBefore);
+ assert.equal((await registration({action:'requestReset',phone:'49999998888',invite:null})).status,200);assert.equal(tables.lt_pf_teste_recovery_internal.length,0);
+ assert.equal((await registration({action:'requestReset',phone:'(49) 98888-0000',invite:null})).status,200);assert.equal(member.password_hash,passwordBefore);
  assert.equal((await api({action:'state'},tokens[0])).status,200);
  let listBefore=await (await registration({action:'adminList',adminKey})).json();assert.equal(listBefore.users.find(u=>u.id===member.id).resetRequested,true);
  assert.equal((await registration({action:'resetPassword',adminKey:invite,userId:member.id,password:'New12345'})).status,403);
  assert.equal((await registration({action:'resetPassword',adminKey,userId:'outside',password:'New12345'})).status,404);
  assert.equal((await registration({action:'resetPassword',adminKey,userId:member.id,password:'short'})).status,400);
+ assert.equal((await registration({action:'resetPassword',adminKey,userId:member.id,password:'New12345',confirmedIdentity:false})).status,400);assert.equal(member.password_hash,passwordBefore);
  assert.equal((await registration({action:'resetPassword',adminKey,userId:member.id,password:'New12345'})).status,200);
  assert.equal(JSON.stringify(tables.lt_pf_spaces_internal),before);assert.equal(member.active,true);
  assert.equal((await api({action:'state'},tokens[0])).status,401);

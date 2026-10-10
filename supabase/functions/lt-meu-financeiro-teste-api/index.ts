@@ -1,3 +1,4 @@
+import {normalizePhone} from './phone.js';
 import {greetingMessage} from './greeting.js';
 import {slots} from './slots.js';
 const allowedSpaces=new Set(slots.map(s=>s.space));
@@ -14,7 +15,7 @@ const hex=(a:ArrayBuffer)=>Array.from(new Uint8Array(a)).map(n=>n.toString(16).p
 async function hash(s:string){return hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))}
 async function passwordHash(p:string,s:string){const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveBits']);return hex(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:new TextEncoder().encode(s),iterations:210000},key,256))}
 function equal(a:string,b:string){if(a.length!==b.length)return false;let n=0;for(let i=0;i<a.length;i++)n|=a.charCodeAt(i)^b.charCodeAt(i);return n===0}
-async function identity(req:Request){const token=(req.headers.get('Authorization')||'').replace(/^Bearer /,'');if(!/^[A-Za-z0-9_-]{43}$/.test(token))throw Object.assign(Error('Entre com seu login.'),{status:401});const digest=await hash(token),rows=await db('lt_pf_tokens_internal','?token_hash=eq.'+digest+'&expires_at=gt.'+encodeURIComponent(new Date().toISOString()));if(!rows.length)throw Object.assign(Error('Seu acesso expirou. Entre novamente.'),{status:401});const users=await db('lt_pf_users_internal','?id=eq.'+rows[0].user_id+'&active=eq.true');if(!users.length||!allowedSpaces.has(users[0].space_id))throw Object.assign(Error('Acesso indisponível.'),{status:401});return {id:users[0].id,name:users[0].display_name,space:users[0].space_id,isOwner:users[0].is_owner===true,permissions:users[0].permissions,digest}}
+async function identity(req:Request){const token=(req.headers.get('Authorization')||'').replace(/^Bearer /,'');if(!/^[A-Za-z0-9_-]{43}$/.test(token))throw Object.assign(Error('Entre com seu login.'),{status:401});const digest=await hash(token),rows=await db('lt_pf_tokens_internal','?token_hash=eq.'+digest+'&expires_at=gt.'+encodeURIComponent(new Date().toISOString()));if(!rows.length)throw Object.assign(Error('Seu acesso expirou. Entre novamente.'),{status:401});const users=await db('lt_pf_users_internal','?id=eq.'+rows[0].user_id+'&active=eq.true');if(!users.length||!allowedSpaces.has(users[0].space_id))throw Object.assign(Error('Acesso indisponível.'),{status:401});return {id:users[0].id,name:users[0].display_name,space:users[0].space_id,phone:users[0].teste_phone||null,isOwner:users[0].is_owner===true,permissions:users[0].permissions,digest}}
 Deno.serve(async(req:Request)=>{
  if(req.method==='OPTIONS')return new Response('ok',{headers:cors});if(req.method!=='POST')return reply({message:'Método inválido.'},405);
  try{
@@ -35,11 +36,12 @@ Deno.serve(async(req:Request)=>{
   assertPermission(user,p.action);
   if(['userCreate','userUpdate'].includes(p.action))return reply({message:'Cada acesso de teste tem seu próprio financeiro. Use o convite para cadastrar outra pessoa.'},403);
   if(['usersList','userCreate','userUpdate'].includes(p.action))return reply(await manageUsers(user,p,{db,passwordHash}));
+  if(p.action==='updatePhone'){const phone=normalizePhone(p.phone);if(!phone)return reply({message:'Informe um telefone válido com DDD.'},400);await db('lt_pf_users_internal','?id=eq.'+user.id+'&space_id=eq.'+user.space,'PATCH',{teste_phone:phone});return reply({phone});}
   if(p.action==='greet'){const previous=await db('lt_pf_chat_internal','?user_id=eq.'+user.id+'&select=message_id&limit=1');const message=await greetingMessage(user,!previous.length);await db('lt_pf_chat_internal','?on_conflict=user_id,message_id','POST',chatRows([message],user),'resolution=ignore-duplicates,return=representation');return reply({ok:true});}
   if(p.action==='chatState')return reply(chatPage(await db('lt_pf_chat_internal',chatQuery(user,p.before))));
   if(p.action==='chatAppend'){await db('lt_pf_chat_internal','?on_conflict=user_id,message_id','POST',chatRows(p.messages,user),'resolution=ignore-duplicates,return=representation');return reply({ok:true})}
   if(p.action==='logout'){await db('lt_pf_tokens_internal','?token_hash=eq.'+user.digest,'DELETE');return reply({ok:true})}
-  if(p.action==='state'){const spaces=await db('lt_pf_spaces_internal','?id=eq.'+user.space);if(!spaces.length)return reply({message:'Financeiro indisponível.'},404);const people=await db('lt_pf_users_internal','?space_id=eq.'+user.space+'&active=eq.true&select=id,display_name');return reply({space:{id:user.space,name:spaces[0].name},revision:spaces[0].revision,data:permissionsOf(user).view?spaces[0].data:{accounts:[],entries:[],cards:[],invoices:[]},user:{id:user.id,name:user.name,isOwner:user.isOwner,permissions:permissionsOf(user)},people})}
+  if(p.action==='state'){const spaces=await db('lt_pf_spaces_internal','?id=eq.'+user.space);if(!spaces.length)return reply({message:'Financeiro indisponível.'},404);const people=await db('lt_pf_users_internal','?space_id=eq.'+user.space+'&active=eq.true&select=id,display_name');return reply({space:{id:user.space,name:spaces[0].name},revision:spaces[0].revision,data:permissionsOf(user).view?spaces[0].data:{accounts:[],entries:[],cards:[],invoices:[]},user:{id:user.id,name:user.name,phone:user.phone,isOwner:user.isOwner,permissions:permissionsOf(user)},people})}
   for(let retry=0;retry<6;retry++){
    const rows=await db('lt_pf_spaces_internal','?id=eq.'+user.space),space=rows[0];if(!space)throw Object.assign(Error('Financeiro indisponível.'),{status:404});
    const next=mutate(space.data,p,user,new Date().toISOString());

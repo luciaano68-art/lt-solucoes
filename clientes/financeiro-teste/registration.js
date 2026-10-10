@@ -18,7 +18,7 @@ function clearInvite(){try{sessionStorage.removeItem(key)}catch{}history.replace
   e.preventDefault();$('registrationError').textContent='';
   if($('newPassword').value!==$('confirmPassword').value){$('registrationError').textContent='As senhas precisam ser iguais.';return}
   $('registerButton').disabled=true;
-  try{const password=$('newPassword').value,p=await call('register',{name:$('newName').value,username:$('newLogin').value,password});clearInvite();form.reset();form.hidden=true;observer.disconnect();$('loginForm').hidden=false;$('username').value=p.username;$('password').value='';$('loginError').textContent='Cadastro recebido! Aguarde a autorização do responsável. Depois, entre com o login e a senha que você criou.'}
+  try{const password=$('newPassword').value,p=await call('register',{name:$('newName').value,username:$('newLogin').value,phone:$('newPhone').value,password});clearInvite();form.reset();form.hidden=true;observer.disconnect();$('loginForm').hidden=false;$('username').value=p.username;$('password').value='';$('loginError').textContent='Cadastro recebido! Aguarde a autorização do responsável. Depois, entre com o login e a senha que você criou.'}
   catch(e){$('registrationError').textContent=e.name==='AbortError'?'Sem resposta. Tente novamente.':e.message}
   finally{$('registerButton').disabled=false}
  };
@@ -26,6 +26,6 @@ function clearInvite(){try{sessionStorage.removeItem(key)}catch{}history.replace
 
 for(const button of document.querySelectorAll('[data-password-toggle]'))button.addEventListener('click',()=>{const input=$(button.dataset.passwordToggle),show=input.type==='password';input.type=show?'text':'password';button.textContent=show?'Ocultar senha':'Mostrar senha';button.setAttribute('aria-pressed',String(show));});
 
-$('forgotPassword').onclick=()=>{form.hidden=true;$('loginForm').hidden=true;$('sessionRestore').hidden=true;$('forgotForm').hidden=false;$('forgotUsername').value=$('username').value;$('forgotStatus').textContent='';};
+$('forgotPassword').onclick=()=>{form.hidden=true;$('loginForm').hidden=true;$('sessionRestore').hidden=true;$('forgotForm').hidden=false;$('forgotPhone').value='';$('forgotStatus').textContent='';};
 $('forgotBack').onclick=()=>{$('forgotForm').hidden=true;$('loginForm').hidden=false;};
-$('forgotForm').onsubmit=async e=>{e.preventDefault();$('forgotSubmit').disabled=true;$('forgotStatus').textContent='Enviando pedido…';try{const result=await call('requestReset',{username:$('forgotUsername').value});$('forgotStatus').textContent=result.message}catch(e){$('forgotStatus').textContent=e.name==='AbortError'?'Sem resposta. Tente novamente.':e.message}finally{$('forgotSubmit').disabled=false}};
+$('forgotForm').onsubmit=async e=>{e.preventDefault();$('forgotSubmit').disabled=true;$('forgotStatus').textContent='Enviando pedido…';try{const result=await call('requestReset',{phone:$('forgotPhone').value});$('forgotStatus').textContent=result.message}catch(e){$('forgotStatus').textContent=e.name==='AbortError'?'Sem resposta. Tente novamente.':e.message}finally{$('forgotSubmit').disabled=false}};
