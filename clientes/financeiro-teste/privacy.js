@@ -4,8 +4,10 @@ export const transferAccountDelta=(data,id)=>(data.transfers||[]).reduce((sum,t)
 export function privacyCutoff(data,user){return (data.accounts||[]).filter(a=>!canSee(a,user)).reduce((last,a)=>a.privateSince>last?a.privateSince:last,'');}
 export function visibleData(data,user){
  const next=structuredClone(data),accounts=new Set((data.accounts||[]).filter(a=>canSee(a,user)).map(a=>a.id)),investments=new Set((data.investments||[]).filter(i=>canSee(i,user)).map(i=>i.id));
+ if(data.fixedExpenses)next.fixedExpenses=data.fixedExpenses.filter(r=>accounts.has(r.accountId));
  next.accounts=(data.accounts||[]).filter(a=>canSee(a,user));
- next.entries=(data.entries||[]).filter(e=>!e.accountId||accounts.has(e.accountId));
+ next.entries=(data.entries||[]).filter(e=>e.cardId||!e.accountId||accounts.has(e.accountId)).map(e=>e.cardId&&e.accountId&&!accounts.has(e.accountId)?{...e,accountId:null}:e);
+ if(data.invoices)next.invoices=data.invoices.map(b=>({...b,...(b.accountId&&!accounts.has(b.accountId)?{accountId:null}:{}),...(b.previousPayment?.accountId&&!accounts.has(b.previousPayment.accountId)?{previousPayment:{...b.previousPayment,accountId:null}}:{})}));
  if(data.investments)next.investments=data.investments.filter(i=>canSee(i,user));
  if(data.investmentMovements)next.investmentMovements=data.investmentMovements.filter(m=>investments.has(m.investmentId)&&(!m.accountId||accounts.has(m.accountId)));
  if(data.transfers)next.transfers=data.transfers.filter(t=>accounts.has(t.fromAccountId)||accounts.has(t.toAccountId));
@@ -27,7 +29,7 @@ export function guardPrivacy(data,p,user){
   if(p.entry?.accountId)account(p.entry.accountId);
  }
  if(['deleteEntry','restoreEntry','settleEntry'].includes(p.action)){const e=(data.entries||[]).find(e=>e.id===p.id);if(e?.accountId)account(e.accountId);if(p.accountId)account(p.accountId);}
- if(p.action.startsWith('invoice')){const b=(data.invoices||[]).find(b=>b.id===p.id);if(b?.accountId)account(b.accountId);if(p.accountId&&account(p.accountId)?.ownerUserId)throw Error('Para pagar uma fatura compartilhada, use uma conta compartilhada. Você pode transferir da sua conta particular para a conta da casa.');}
+ if(p.action.startsWith('invoice')){const b=(data.invoices||[]).find(b=>b.id===p.id);if(b?.accountId)account(b.accountId);if(p.accountId)account(p.accountId);}
  if(p.action.startsWith('investment')){
   const i=(data.investments||[]).find(i=>i.id===(p.investmentId||p.id));if(i&&!canSee(i,user))deny();if(p.action==='investmentCreate'&&i&&p.visibility!==undefined&&(p.visibility==='private')!==!!i.ownerUserId)throw Object.assign(Error('Esta aplicação já foi cadastrada com outra privacidade.'),{status:409});
   const m=(data.investmentMovements||[]).find(m=>m.id===p.id);if(m){const previous=(data.investments||[]).find(i=>i.id===m.investmentId);if(previous&&!canSee(previous,user))deny();}
@@ -55,3 +57,4 @@ export function mutateTransfer(state,p,user,stamp){
  if(old){if(old.createdById===user.id&&old.fromAccountId===source.id&&old.toAccountId===target.id&&old.cents===p.cents&&old.date===p.date)return state;throw Object.assign(Error('Esta transferência já foi confirmada. Atualize a lista.'),{status:409});}
  const data=structuredClone(state);data.transfers||=[];data.transfers.push({id:p.id,fromAccountId:source.id,toAccountId:target.id,fromName:source.name,toName:target.name,cents:p.cents,date:p.date,createdById:user.id,createdBy:user.name,createdAt:stamp});return data;
 }
+

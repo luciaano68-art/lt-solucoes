@@ -1,3 +1,4 @@
+import {manageReceipt} from './receipts.js';
 import {visibleData,privacyCutoff} from './privacy.js';
 import {normalizePhone} from './phone.js';
 import {greetingMessage} from './greeting.js';
@@ -21,7 +22,8 @@ async function identity(req:Request){const token=(req.headers.get('Authorization
 Deno.serve(async(req:Request)=>{
  if(req.method==='OPTIONS')return new Response('ok',{headers:cors});if(req.method!=='POST')return reply({message:'Método inválido.'},405);
  try{
-  const raw=await req.text();if(raw.length>60000)return reply({message:'Solicitação muito grande.'},413);let p;try{p=JSON.parse(raw)}catch{return reply({message:'Solicitação inválida.'},400)}
+  const raw=await req.text();if(raw.length>4200000)return reply({message:'Solicitação muito grande.'},413);let p;try{p=JSON.parse(raw)}catch{return reply({message:'Solicitação inválida.'},400)}
+  if(p.action!=='receiptUpload'&&raw.length>60000)return reply({message:'Solicitação muito grande.'},413);
   if(p.action==='login'){
    const username=String(p.username||'').trim().toLowerCase(),password=String(p.password||'');if(username.length>100||password.length>200||!password)return reply({message:'Login ou senha incorretos.'},401);
    const rows=await db('lt_pf_users_internal','?username=eq.'+encodeURIComponent(username)+'&space_id=in.('+slots.map(s=>s.space).join(',')+')'),a=rows[0];if(!a){await passwordHash(password,'unknown');return reply({message:'Login ou senha incorretos.'},401)}
@@ -37,6 +39,10 @@ Deno.serve(async(req:Request)=>{
   const user=await identity(req);
   if(p.spaceId&&p.spaceId!==user.space)return reply({message:'Você não tem acesso a este financeiro.'},403);
   assertPermission(user,p.action);
+  if(['receiptUpload','receiptGet','receiptRemove'].includes(p.action)){
+   const storage=async(path,opts)=>{const response=await fetch(Deno.env.get('SUPABASE_URL')+'/storage/v1'+path,{method:opts.method,headers:{apikey:secret,Authorization:'Bearer '+secret,'Content-Type':opts.mime||'application/json'},body:opts.bytes|| (opts.json?JSON.stringify(opts.json):undefined)});if(opts.allowMissing&&response.status===404)return null;if(!response.ok)throw Object.assign(Error('Não foi possível salvar ou abrir o comprovante. Tente novamente.'),{status:503});return response.json();};
+   return reply(await manageReceipt(p,user,{db,storage}));
+  }
   if(['usersList','userCreate','userUpdate'].includes(p.action)){const result=await manageUsers(user,p,{db,passwordHash,approvalRequired:true});if(p.action==='userCreate')void notifyAdmin('cadastro:'+result.user.id,'cadastro');return reply(result);}
   if(p.action==='updatePhone'){const phone=normalizePhone(p.phone);if(!phone)return reply({message:'Informe um telefone válido com DDD.'},400);await db('lt_pf_users_internal','?id=eq.'+user.id+'&space_id=eq.'+user.space,'PATCH',{teste_phone:phone});return reply({phone});}
   if(p.action==='greet'){const previous=await db('lt_pf_chat_internal','?user_id=eq.'+user.id+'&select=message_id&limit=1');const message=await greetingMessage(user,!previous.length);await db('lt_pf_chat_internal','?on_conflict=user_id,message_id','POST',chatRows([message],user),'resolution=ignore-duplicates,return=representation');return reply({ok:true});}
@@ -52,6 +58,7 @@ Deno.serve(async(req:Request)=>{
   for(let retry=0;retry<6;retry++){
    const rows=await db('lt_pf_spaces_internal','?id=eq.'+user.space),space=rows[0];if(!space)throw Object.assign(Error('Financeiro indisponível.'),{status:404});
    const next=mutate(space.data,p,user,new Date().toISOString());
+   if(next===space.data)return reply({ok:true,revision:space.revision,data:visibleData(space.data,user),redactBefore:privacyCutoff(space.data,user)});
    const saved=await db('lt_pf_spaces_internal','?id=eq.'+user.space+'&revision=eq.'+space.revision,'PATCH',{data:next,revision:space.revision+1});if(saved.length)return reply({ok:true,revision:saved[0].revision,data:visibleData(saved[0].data,user),redactBefore:privacyCutoff(saved[0].data,user)});
   }
   return reply({message:'Outro aparelho está salvando. Tente novamente.'},409);

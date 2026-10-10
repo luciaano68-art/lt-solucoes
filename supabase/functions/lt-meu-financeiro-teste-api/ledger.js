@@ -1,3 +1,4 @@
+import {mutateFixedExpense} from './fixed-expenses.js';
 import {guardPrivacy,stampPrivacy,mutateTransfer,transferAccountDelta,visibleData} from './privacy.js';
 import {mutateBudget,updateBudgetAlerts} from './budget.js';
 import {mutateInvestment,investmentAccountDelta} from './investments.js';
@@ -25,6 +26,7 @@ export function summarize(state,month){
 }
 export function mutate(state,p,user,now){
  guardPrivacy(state,p,user);
+ if(p.action.startsWith('fixedExpense'))return mutateFixedExpense(state,p,user,now||new Date().toISOString());
  const stamp=now||new Date().toISOString();
  if(p.action==='transfer')return mutateTransfer(state,p,user,stamp);
  return stampPrivacy(mutateUnchecked(state,p,user,stamp),state,p,user,stamp);
@@ -58,4 +60,5 @@ function mutateUnchecked(state,p,user,now){
  const old=state.entries.find(e=>e.id===p.id),updated=data.entries.find(e=>e.id===p.id);for(const id of new Set([old?.invoiceId,updated?.invoiceId].filter(Boolean))){let bill=data.invoices.find(b=>b.id===id);if(!bill&&updated?.cardId){const card=data.cards.find(c=>c.id===updated.cardId);bill=ensureInvoice(data,card,id.slice(card.id.length+1),stamp);}if(bill){bill.version++;bill.updatedBy=user.name;bill.updatedAt=stamp;}}
  return privateBudgetAlerts(data,state,user,stamp);
 }
+
 

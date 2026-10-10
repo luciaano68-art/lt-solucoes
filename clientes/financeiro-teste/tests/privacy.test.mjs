@@ -52,7 +52,7 @@ test('private investments and their histories remain private and cannot bridge i
 });
 test('shared invoices cannot expose private account balances through payments or later conversion',()=>{
  const {data,ids}=setup(),card=crypto.randomUUID();const s=mutate(data,{action:'card',id:card,name:'Cartão casa',closingDay:10,dueDay:20},a,stamp);const bill=s.invoices[0];bill.status='closed';bill.closedTotal=0;
- assert.throws(()=>mutate(s,{action:'invoicePay',id:bill.id,version:bill.version,accountId:ids.a,paidDate:date,confirmedCents:0},a,stamp));
+ const paid=mutate(s,{action:'invoicePay',id:bill.id,version:bill.version,accountId:ids.a,paidDate:date,confirmedCents:0},a,stamp);assert.equal(visibleData(paid,b).invoices[0].accountId,null);assert.equal(visibleData(paid,a).invoices[0].accountId,ids.a);assert.throws(()=>mutate(s,{action:'invoicePay',id:bill.id,version:bill.version,accountId:ids.a,paidDate:date,confirmedCents:0},b,stamp),e=>e.status===403);
  s.entries.push({id:crypto.randomUUID(),accountId:ids.house,cardId:card,cents:1000});assert.throws(()=>mutate(s,{action:'account',id:ids.house,name:'Casa',openingCents:5000,version:1,visibility:'private'},a,stamp));
 });
 test('private budget alerts and reasons never disclose spending to the spouse',()=>{
@@ -85,3 +85,4 @@ test('transfer amounts preserve complete decimals; dates are respected; transfer
  await ui.handle('transferi 10 da conta Sicredi para Apressol ontem');await ui.handle('confirmar');assert.equal(payload.date,'2026-10-09');payload=null;
  await ui.handle('transferi 10 da conta Sicredi para Apressol dia 30/02/2026');assert.match(messages.at(-1),/Confira a data/);assert.equal(payload,null);
 });
+
