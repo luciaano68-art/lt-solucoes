@@ -1,7 +1,7 @@
 import {bindMoneyInput} from './money-input.js';
-import {moneyCents,normalize} from './conversation.js';
+import {moneyCents,normalize,parseMessage} from './conversation.js';
 export function transferIntent(text){const n=normalize(text);return !/\b(taxa|tarifa|custo)\b.*\btransfer/.test(n)&&/\b(transfer\w*|transfir\w*)\b/.test(n);}
-export function transferAmount(text){const match=String(text).replace(/\d{1,2}\/\d{1,2}(?:\/\d{2,4})?/g,'').match(/(?:R\$\s*)?(-?\d+(?:\.\d{3})*(?:[,.]\d{1,2})?)/i);return match?moneyCents(match[1]):null;}
+export function transferAmount(text){const match=String(text).replace(/\d{1,2}\/\d{1,2}(?:\/\d{2,4})?/g,'').match(/(?:R\$\s*)?(-?\d[\d.,]*)/i);return match?moneyCents(match[1].replace(/[.,]$/,'')):null;}
 export function transferNamed(text,rows){const n=normalize(text),matches=rows.filter(a=>n.includes(normalize(a.name))),longest=Math.max(0,...matches.map(a=>normalize(a.name).length));const list=matches.filter(a=>normalize(a.name).length===longest);if(list.length===1)return list[0];const named=list.filter(a=>a.ownerName&&n.includes(normalize(a.ownerName)));return named.length===1?named[0]:null;}
 export function createTransfersUI({getState,can,request,update,render,money,today,escape,say=()=>{},clearOtherFlow=()=>{}}){
  let dialog=null,id=null,pending=null;
@@ -14,7 +14,7 @@ export function createTransfersUI({getState,can,request,update,render,money,toda
   else if(!pending.fromAccountId){pending.stage='from';say('De qual conta sua sai o dinheiro? '+sources().map(a=>a.name).join(', ')+'.');}
   else if(!pending.toAccountId){pending.stage='to';say('Para qual conta vai? '+targets().filter(a=>a.id!==pending.fromAccountId).map(a=>a.name+(a.private?' ('+(a.ownerName||'particular')+')':'')).join(', ')+'.');}
   else if(pending.fromAccountId===pending.toAccountId){pending.toAccountId=null;question();return;}
-  else {pending.stage='confirm';say('Confirmar transferência de '+money(pending.cents)+' de '+sources().find(a=>a.id===pending.fromAccountId).name+' para '+targets().find(a=>a.id===pending.toAccountId).name+'? Não entra como gasto ou receita. É um registro no app; o dinheiro precisa ser transferido pelo banco.');}
+  else {pending.stage='confirm';say('Confirmar transferência de '+money(pending.cents)+' de '+sources().find(a=>a.id===pending.fromAccountId).name+' para '+targets().find(a=>a.id===pending.toAccountId).name+', em '+pending.date.split('-').reverse().join('/')+'? Não entra como gasto ou receita. É um registro no app; o dinheiro precisa ser transferido pelo banco.');}
   render();
  }
  async function handle(text){
@@ -27,7 +27,8 @@ export function createTransfersUI({getState,can,request,update,render,money,toda
   if(/^(cancelar|cancela|nao)[.!?]*$/.test(n)){pending=null;say('Transferência cancelada. Nada foi lançado.');render();return true;}
   if(!pending){
    clearOtherFlow();const parts=n.split(/\bpara\b/),from=transferNamed(parts[0],sources()),to=parts.length>1?transferNamed(parts.slice(1).join(' para '),targets()):null;
-   const amount=transferAmount(text);pending={id:crypto.randomUUID(),cents:amount>0?amount:null,date:today(),fromAccountId:from?.id||null,toAccountId:to?.id||null};question();return true;
+   const parsed=parseMessage(text,[],today());if(parsed.invalidDate){say('Confira a data da transferência e envie novamente.');render();return true;}
+   const amount=transferAmount(text);pending={id:crypto.randomUUID(),cents:amount>0?amount:null,date:parsed.date||today(),fromAccountId:from?.id||null,toAccountId:to?.id||null};question();return true;
   }
   if(pending.stage==='confirm'&&/^(sim|confirmar|confirmo|confirmar transferencia)[.!?]*$/.test(n)){
    if(pending.saving)return true;pending.saving=true;

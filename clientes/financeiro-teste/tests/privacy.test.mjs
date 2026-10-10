@@ -5,7 +5,7 @@ import {visibleData,privacyCutoff} from '../privacy.js';
 import {assertPermission,readPermissions} from '../permissions.js';
 import {accountBalanceReply} from '../account-query.js';
 import {ChatSync} from '../chat-sync.js';
-import {createTransfersUI,transferIntent} from '../transfers-ui.js';
+import {createTransfersUI,transferIntent,transferAmount} from '../transfers-ui.js';
 const a={id:crypto.randomUUID(),name:'Luciano',isOwner:true},b={id:crypto.randomUUID(),name:'Yasmin'},stamp='2026-10-10T21:00:00.000Z',date='2026-10-10';
 const empty=()=>({accounts:[],entries:[],cards:[],invoices:[],budgets:[],budgetAlerts:[],budgetSettings:{enabled:true,version:1}});
 function setup(){let data=empty();const ids={a:crypto.randomUUID(),b:crypto.randomUUID(),house:crypto.randomUUID()};for(const [key,user,name,cents] of [['a',a,'Sicredi',10000],['b',b,'Apressol',20000],['house',a,'Casa',5000]])data=mutate(data,{action:'account',id:ids[key],name,openingCents:cents,visibility:key==='house'?'shared':'private'},user,stamp);return {data,ids};}
@@ -77,4 +77,11 @@ test('incomplete transfer conversation asks amount, own source and destination i
  const {data}=setup(),messages=[];let count=0;
  const ui=createTransfersUI({getState:()=>visibleData(data,a),can:()=>true,request:async()=>{count++;return {data};},update:()=>{},render:()=>{},say:t=>messages.push(t),money:String,today:()=>date,escape:String});
  await ui.handle('estou transferindo de uma conta minha para outra');assert.match(messages.at(-1),/Qual valor/);await ui.handle('10,00');assert.match(messages.at(-1),/De qual conta/);await ui.handle('Sicredi');assert.match(messages.at(-1),/Para qual conta/);await ui.handle('Apressol');assert.match(messages.at(-1),/Confirmar transferência/);await ui.handle('cancelar');assert.equal(count,0);
+});
+test('transfer amounts preserve complete decimals; dates are respected; transfer fee remains an expense',async()=>{
+ assert.equal(transferAmount('transferi R$ 1.234,56'),123456);assert.equal(transferAmount('transferi 10,999'),null);assert.equal(transferAmount('transferi -10,00'),-1000);assert.equal(transferAmount('transferi 50,00 dia 07/10/2026'),5000);assert.equal(transferIntent('gastei 10 com taxa de transferência'),false);
+ const {data}=setup(),messages=[];let payload;
+ const ui=createTransfersUI({getState:()=>visibleData(data,a),can:()=>true,request:async p=>{payload=p;return {data};},update:()=>{},render:()=>{},say:t=>messages.push(t),money:String,today:()=>date,escape:String});
+ await ui.handle('transferi 10 da conta Sicredi para Apressol ontem');await ui.handle('confirmar');assert.equal(payload.date,'2026-10-09');payload=null;
+ await ui.handle('transferi 10 da conta Sicredi para Apressol dia 30/02/2026');assert.match(messages.at(-1),/Confira a data/);assert.equal(payload,null);
 });
