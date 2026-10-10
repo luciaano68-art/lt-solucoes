@@ -1,4 +1,5 @@
 import {normalize,moneyCents} from './conversation.js';
+import {bindMoneyInput} from './money-input.js';
 import {investmentEstimate} from './investments.js';
 import {investmentIntent,namedChoice} from './investment-chat.js';
 export function createInvestmentsUI({getState,can,request,update,render,say,money,escape,today,go,hasOtherFlow}){
@@ -64,14 +65,14 @@ export function createInvestmentsUI({getState,can,request,update,render,say,mone
  }
  function openCreate(){
   if(!can('accounts'))return;
-  if(!dialog){dialog=document.createElement('dialog');dialog.innerHTML='<form id="investmentCreateForm"><h2>Cadastrar aplicação</h2><label for="investmentName">Nome</label><input id="investmentName" maxlength="80" placeholder="Ex.: Caixinha Nubank" required><label for="investmentOpening">Saldo que já está aplicado (R$)</label><input id="investmentOpening" inputmode="decimal" placeholder="0,00" value="0,00" required><p class="muted">Informe o saldo atual. Este cadastro não retira dinheiro da sua conta. Para guardar mais, registre um aporte após cadastrar.</p><p id="investmentError" class="error" role="alert"></p><button id="investmentCreateSave" type="submit">Confirmar cadastro</button><button id="investmentCreateCancel" type="button" class="secondary">Cancelar</button></form>';document.body.append(dialog);
+  if(!dialog){dialog=document.createElement('dialog');dialog.innerHTML='<form id="investmentCreateForm"><h2>Cadastrar aplicação</h2><label for="investmentName">Nome</label><input id="investmentName" maxlength="80" placeholder="Ex.: Caixinha Nubank" required><label for="investmentOpening">Saldo que já está aplicado (R$)</label><input id="investmentOpening" inputmode="decimal" placeholder="R$ 0,00" value="R$ 0,00" required><p class="muted">Informe o saldo atual. Este cadastro não retira dinheiro da sua conta. Para guardar mais, registre um aporte após cadastrar.</p><p id="investmentError" class="error" role="alert"></p><button id="investmentCreateSave" type="submit">Confirmar cadastro</button><button id="investmentCreateCancel" type="button" class="secondary">Cancelar</button></form>';document.body.append(dialog);
    document.getElementById('investmentCreateCancel').onclick=()=>dialog.close();
    document.getElementById('investmentCreateForm').onsubmit=async e=>{e.preventDefault();const button=document.getElementById('investmentCreateSave');if(button.disabled)return;button.disabled=true;
     try{const result=await request({action:'investmentCreate',id:formId,name:document.getElementById('investmentName').value,cents:moneyCents(document.getElementById('investmentOpening').value),date:today()});update(result.data);dialog.close();render();if(pending&&!pending.investmentId){pending.investmentId=formId;advance();}}
     catch(e){document.getElementById('investmentError').textContent=e.message}finally{button.disabled=false};
    };
   }
-  formId=crypto.randomUUID();document.getElementById('investmentCreateForm').reset();document.getElementById('investmentError').textContent='';dialog.showModal();
+  formId=crypto.randomUUID();document.getElementById('investmentCreateForm').reset();document.getElementById('investmentOpening').value=money(0);bindMoneyInput(document.getElementById('investmentOpening'));document.getElementById('investmentError').textContent='';dialog.showModal();
  }
  function bind(){document.querySelectorAll('[data-invest-open]').forEach(b=>b.onclick=()=>go('investments'));document.querySelectorAll('[data-invest-create]').forEach(b=>{b.hidden=!can('accounts');b.onclick=openCreate});for(const kind of ['deposit','withdraw','balance'])document.querySelectorAll('[data-invest-'+kind+']').forEach(b=>{b.hidden=!can('accounts');b.onclick=()=>start(kind,b.getAttribute('data-invest-'+kind))});document.querySelectorAll('[data-invest-confirm]').forEach(b=>b.onclick=save);document.querySelectorAll('[data-invest-cancel]').forEach(b=>b.onclick=()=>{if(saving)return;pending=null;tell('Operação cancelada. Nada foi salvo.');});}
  return {handle,bubble,view,bind,get active(){return !!pending},reset(){pending=null;dialog?.close()}};

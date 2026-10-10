@@ -1,3 +1,4 @@
+import {bindMoneyInput} from './money-input.js';
 import {accountsPage} from './accounts-view.js';
 import {createInvestmentsUI} from './investments-ui.js';
 import {accessScreen} from './access-screen.js';
@@ -18,7 +19,7 @@ import {summarize} from './ledger.js';
 import {parseMessage,normalize,moneyCents,categories,categoryOf,shiftDate} from './conversation.js';
 const endpoint='https://wwietlvweqsxfpejhhis.supabase.co/functions/v1/lt-meu-financeiro-teste-api',publicKey='sb_publishable_dArUUh2qpDqbzvjxXAEbNQ_hT6Y0y5y';
 const authKey='lt_pf_teste_auth_v1',$=id=>document.getElementById(id);
-const appVersion='2026-10-10-teste-v10';let appUpdating=false,workerRegistration=null;
+const appVersion='2026-10-10-teste-v11';let appUpdating=false,workerRegistration=null;
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>(n/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo'}).format(new Date()),formatDate=s=>s?s.split('-').reverse().join('/'):'—';
 const announcedBudgets=new Set(),announcedEntries=new Set();
@@ -31,12 +32,6 @@ const sessionStore=createSessionStore({key:authKey,local:safeStorage('localStora
 function safeStorage(name){try{return window[name]}catch{return null}}
 auth=sessionStore.readSync();
 const chatKey=()=> 'lt_pf_teste_chat_'+user.id;
-function maskedMoney(raw){const digits=String(raw).replace(/\D/g,'');if(!digits)return '';const cents=Number(digits);if(!Number.isSafeInteger(cents))return raw;const negative=String(raw).includes('-');return (negative?'-':'')+money(cents);}
-function bindMoneyInput(input){
- input.addEventListener('input',()=>{input.value=maskedMoney(input.value);});
- input.addEventListener('focus',()=>input.select());
- input.addEventListener('paste',event=>{const raw=event.clipboardData?.getData('text');const cents=moneyCents(raw);if(cents!==null){event.preventDefault();input.value=money(cents);}});
-}
 [$('entryAmount'),$('accountBalance')].forEach(bindMoneyInput);
 
 function toast(text){$('toast').textContent=text;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,4000)}
