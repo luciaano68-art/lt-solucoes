@@ -139,3 +139,56 @@ body{background:radial-gradient(ellipse at top left,#eaf2ed 0,transparent 50%),v
  .accounts-contact p{font-size:13px}
 }
 
+/* Cartões: hierarquia por vencimento, sem alterar as ações financeiras. */
+.invoice-view .page-head h2{font-size:25px}
+.invoice-view .page-head p{font-size:12px;max-width:460px}
+.invoice-view .card-mini{position:relative;padding:18px;border-radius:18px;align-items:flex-start;gap:8px}
+.invoice-view .card-mini>div{min-width:0;flex:1}
+.invoice-view .card-mini h3{font-size:15px;line-height:1.4;margin-bottom:4px;padding-right:40px;overflow-wrap:anywhere}
+.invoice-view .card-mini>button{position:absolute;right:12px;top:12px}
+.invoice-view .card-mini>div>.muted{font-size:12px}
+.invoice-view .card-limit{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:15px;padding-top:13px;border-top:1px solid var(--line)}
+.invoice-view .card-limit>span{font-size:11px;color:var(--muted);min-width:0}
+.invoice-view .card-limit b{display:block;font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.invoice-view .card-limit>.green b{color:var(--green)}
+.invoice-view .card-limit>.red b{color:var(--red)}
+.invoice-view .card-limit small{grid-column:1/-1;font-size:10px}
+.invoice-section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:24px 0 12px}
+.invoice-section-heading h3{margin:0;font-size:17px}
+.invoice-section-heading span{font-size:11px;color:var(--muted)}
+.invoice-grid{display:grid;gap:12px}
+.invoice-view .invoice-tile{margin:0;padding:18px;border-radius:18px;box-shadow:0 3px 14px #164f4304}
+.invoice-view>.invoice-tile{margin:14px 0}
+.invoice-tile-next{border-color:#a7cabc!important;border-top:3px solid var(--green)!important;background:linear-gradient(135deg,#f8fcfa,#fff 65%)}
+.invoice-tile-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.invoice-eyebrow{display:block;font-size:10px;font-weight:650;letter-spacing:.45px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.invoice-tile-next .invoice-eyebrow{color:var(--green)}
+.invoice-tile-head h3{font-size:19px;line-height:1.25;letter-spacing:-.3px;margin:0}
+.invoice-tile .badge{flex:none;margin:0;padding:5px 9px;font-size:10px;border-radius:8px}
+.invoice-card-name{color:var(--muted);font-size:12px;line-height:1.4;margin:9px 0 14px;overflow-wrap:anywhere}
+.invoice-amount-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.invoice-tile .invoice-total{font-size:28px;line-height:1.15;letter-spacing:-.8px;color:var(--green);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.invoice-item-count{color:var(--muted);font-size:11px;white-space:nowrap}
+.invoice-tile .bill-dates{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:15px 0 0;padding:12px 0;border-top:1px solid #edf2ef;border-bottom:1px solid #edf2ef}
+.invoice-tile .bill-dates span{display:grid;gap:2px;font-size:12px;color:var(--ink)}
+.invoice-tile .bill-dates small{font-size:10px;color:var(--muted)}
+.invoice-tile .bill-dates b{font-weight:600;font-variant-numeric:tabular-nums}
+.invoice-tile .invoice-actions{display:grid;grid-template-columns:1fr 1.15fr;gap:8px;margin-top:12px}
+.invoice-tile .invoice-actions button{font-size:12px;padding:10px 8px;border-radius:11px;min-height:44px;line-height:1.3;white-space:normal}
+.invoice-tile .invoice-actions button:only-child{grid-column:1/-1}
+.invoice-paid-note{margin:12px 0 0;font-size:11px}
+.invoice-view .invoice-history{margin-top:18px;padding:14px 18px;border-radius:16px}
+.invoice-view .invoice-history details{margin:0}
+.invoice-view .invoice-history summary{min-height:32px;display:flex;align-items:center;font-weight:600}
+.invoice-history .invoice-tile{margin-top:12px}
+.invoice-back{font-size:12px;min-height:40px;margin-bottom:8px}
+.invoice-view .bill-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:14px 0;align-items:start}
+.invoice-view .bill-item>div{min-width:0;overflow-wrap:anywhere}
+.invoice-view .bill-item>div>strong{font-size:13px;line-height:1.5}
+.invoice-view .bill-item>strong{font-size:14px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.invoice-view .bill-item small{font-size:11px;margin-top:4px}
+.invoice-view .bill-item .text-button{font-size:11px;min-height:36px;padding:7px 9px;background:#f0f6f2;justify-self:start}
+.invoice-view .bill-items{max-height:none;overflow:visible}
+@media(min-width:680px){.invoice-grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.invoice-view .card-mini{padding:20px}.invoice-view .card-mini .card-limit{max-width:620px}.invoice-tile .invoice-total{font-size:30px}}
+@media(max-width:380px){.invoice-view .invoice-tile{padding:15px}.invoice-tile-head h3{font-size:17px}.invoice-tile .invoice-total{font-size:26px}.invoice-view .card-limit b{font-size:12px}.invoice-tile .invoice-actions button{font-size:11px}}
+

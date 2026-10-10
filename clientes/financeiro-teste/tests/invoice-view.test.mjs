@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {invoiceTile} from '../invoice-view.js';
+const bill={id:'invoice-1',cycle:'2026-10',closeDate:'2026-10-29',dueDate:'2026-11-13',status:'open'};
+const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const opts={total:198302,diff:null,count:5,name:'Sicredi · final 8111',paidAccount:'Conta',escape,money:c=>(c/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),formatDate:d=>d?d.split('-').reverse().join('/'):'—'};
+test('invoice title uses due month rather than closing month; dates and amounts preserved',()=>{const html=invoiceTile(bill,opts);assert.match(html,/Novembro 2026/);assert.match(html,/29\/10\/2026/);assert.match(html,/13\/11\/2026/);assert.match(html,/1\.983,02/);assert.match(html,/5 compras/);assert.equal(bill.status,'open');});
+test('open, closed and paid invoices retain existing action attributes',()=>{for(const [status,mode] of [['open','close'],['closed','pay'],['paid',null]]){const html=invoiceTile({...bill,status,paidDate:'2026-11-13'},opts);assert.match(html,/data-open-bill="invoice-1"/);if(mode)assert.match(html,new RegExp('data-bill-flow="invoice-1" data-mode="'+mode+'"'));else{assert.doesNotMatch(html,/data-bill-flow/);assert.match(html,/Paga em 13\/11\/2026/);}}});
+test('next invoice highlighted without changing status or eligibility',()=>{const html=invoiceTile(bill,{...opts,next:true,count:1});assert.match(html,/invoice-tile-next/);assert.match(html,/Próximo vencimento/);assert.match(html,/1 compra</);assert.match(html,/Aberta/);});
+test('untrusted names and ids escaped; bank discrepancy still displayed',()=>{const html=invoiceTile({...bill,id:'"><script>'},{...opts,name:'<img src=x>',diff:1000});assert.doesNotMatch(html,/<script>|<img/);assert.match(html,/&lt;img/);assert.match(html,/Faltam R\$\s10,00/);});
