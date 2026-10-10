@@ -1,3 +1,4 @@
+import {greetingMessage} from './greeting.js';
 import {slots} from './slots.js';
 const allowedSpaces=new Set(slots.map(s=>s.space));
 import {assertPermission,permissionsOf} from './permissions.js';
@@ -34,6 +35,7 @@ Deno.serve(async(req:Request)=>{
   assertPermission(user,p.action);
   if(['userCreate','userUpdate'].includes(p.action))return reply({message:'Cada acesso de teste tem seu próprio financeiro. Use o convite para cadastrar outra pessoa.'},403);
   if(['usersList','userCreate','userUpdate'].includes(p.action))return reply(await manageUsers(user,p,{db,passwordHash}));
+  if(p.action==='greet'){const previous=await db('lt_pf_chat_internal','?user_id=eq.'+user.id+'&select=message_id&limit=1');const message=await greetingMessage(user,!previous.length);await db('lt_pf_chat_internal','?on_conflict=user_id,message_id','POST',chatRows([message],user),'resolution=ignore-duplicates,return=representation');return reply({ok:true});}
   if(p.action==='chatState')return reply(chatPage(await db('lt_pf_chat_internal',chatQuery(user,p.before))));
   if(p.action==='chatAppend'){await db('lt_pf_chat_internal','?on_conflict=user_id,message_id','POST',chatRows(p.messages,user),'resolution=ignore-duplicates,return=representation');return reply({ok:true})}
   if(p.action==='logout'){await db('lt_pf_tokens_internal','?token_hash=eq.'+user.digest,'DELETE');return reply({ok:true})}

@@ -1,6 +1,6 @@
 const $=id=>document.getElementById(id),key='lt_pf_teste_admin';
 let adminKey=new URLSearchParams(location.hash.slice(1)).get('chave');
-try{if(adminKey)sessionStorage.setItem(key,adminKey);else adminKey=sessionStorage.getItem(key)}catch{}
+try{if(adminKey)sessionStorage.setItem(key,adminKey);else adminKey=sessionStorage.getItem(key)||localStorage.getItem(key)}catch{}
 history.replaceState(null,'',location.pathname);
 async function call(action,fields={}){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
@@ -8,7 +8,7 @@ async function call(action,fields={}){
 }
 async function load(){
  $('reload').disabled=true;$('status').textContent='Buscando cadastros…';
- try{const data=await call('adminList');$('registrations').replaceChildren();$('status').textContent=data.users.length+' de '+data.limit+' acessos cadastrados.';
+ try{const data=await call('adminList');try{localStorage.setItem(key,adminKey)}catch{}$('controlAccess').hidden=true;$('registrations').replaceChildren();$('status').textContent=data.users.length+' de '+data.limit+' acessos cadastrados.';
   for(const user of data.users){const card=document.createElement('section');card.className='card';const name=document.createElement('h2');name.textContent=user.name;const login=document.createElement('p');login.textContent='Login: '+user.username;const status=document.createElement('p');status.textContent=user.active?'✓ Autorizado':'Aguardando sua autorização';card.append(name,login,status);
    if(!user.active){const button=document.createElement('button');button.type='button';button.textContent='Autorizar acesso';button.onclick=async()=>{if(!confirm('Autorizar o acesso de '+user.name+' ('+user.username+')?'))return;button.disabled=true;try{await call('approve',{userId:user.id});await load()}catch(e){$('status').textContent=e.message;button.disabled=false}};card.append(button)}
    $('registrations').append(card);
@@ -17,4 +17,6 @@ async function load(){
  finally{$('reload').disabled=false}
 }
 $('reload').onclick=load;
-if(adminKey)load();else{$('status').textContent='Abra o link de controle exclusivo do responsável.';$('reload').disabled=true}
+if(adminKey)load();else{$('status').textContent='Entre com seu código de controle ou abra seu link exclusivo.';$('controlAccess').hidden=false;$('reload').disabled=true}
+
+$('controlAccess').onsubmit=e=>{e.preventDefault();adminKey=$('controlKey').value.trim();load();};

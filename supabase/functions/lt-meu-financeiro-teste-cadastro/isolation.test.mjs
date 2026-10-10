@@ -20,7 +20,7 @@ async function db(url,options={}){
   if(body.username&&table.some(r=>r.username===body.username&&!rows.includes(r)))return Response.json({}, {status:409});
   rows.forEach(r=>Object.assign(r,body));return Response.json(structuredClone(rows));
  }
- if(method==='POST'){table.push(...(Array.isArray(body)?body:[body]));return Response.json(body)}
+ if(method==='POST'){const incoming=Array.isArray(body)?body:[body];for(const row of incoming){if(params.get('on_conflict')==='user_id,message_id'&&table.some(r=>r.user_id===row.user_id&&r.message_id===row.message_id))continue;table.push(row)}return Response.json(body)}
  if(method==='DELETE'){for(const r of rows)table.splice(table.indexOf(r),1);return Response.json([])}
  throw Error('unexpected method');
 }
@@ -49,6 +49,8 @@ test('five independent registrations; approval required; sixth blocked; data and
   assert.equal((await registration({action:'approve',adminKey,userId:member.id})).status,200);
   const login=await api({action:'login',username:'person'+i,password:'Test12345'});assert.equal(login.status,200);tokens.push(login.body.token);
   const own=await api({action:'state'},login.body.token);assert.equal(own.status,200);assert.equal(own.body.people.length,1);assert.deepEqual(own.body.data,empty());
+  assert.equal((await api({action:'greet'},login.body.token)).status,200);assert.equal((await api({action:'greet'},login.body.token)).status,200);
+  const greetings=tables.lt_pf_chat_internal.filter(m=>m.user_id===member.id);assert.equal(greetings.length,1);assert.match(greetings[0].text,/Bem-vindo/);
   const other=slots.find(s=>s.space!==member.space_id);
   assert.equal((await api({action:'state',spaceId:other.space},login.body.token)).status,403);
   assert.equal((await api({action:'userCreate'},login.body.token)).status,403);
