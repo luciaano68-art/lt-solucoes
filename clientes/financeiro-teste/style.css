@@ -63,3 +63,79 @@ body{background:radial-gradient(ellipse at top left,#eaf2ed 0,transparent 50%),v
 .chat-keyboard #manageUsers{display:none}
 
 #installHelp{max-width:440px}#installSteps{line-height:1.65;margin:12px 0 24px}#installHelp button:not(.icon-button){width:100%;margin-top:12px}#installCopyStatus{overflow-wrap:anywhere}
+
+/* Accounts overview: all selectors are scoped to this screen. */
+.accounts-page{max-width:860px;margin:auto}
+.accounts-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+.accounts-heading h2{font-size:28px;line-height:1.2;margin:0 0 5px}
+.accounts-heading .muted{font-size:13px;margin:0}
+.accounts-eyebrow{color:#6c887b;font-size:10px;font-weight:750;letter-spacing:1.6px;margin:0 0 6px}
+.accounts-heading .account-add{flex-shrink:0;min-height:44px;padding:10px 16px;border-radius:13px;font-size:13px}
+.accounts-balance{display:flex;align-items:center;gap:16px;padding:24px;border-radius:22px;background:linear-gradient(130deg,#145b4b,#247a61);color:#fff;margin-bottom:18px;box-shadow:0 8px 24px #145b4b16}
+.accounts-balance-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;background:#ffffff15;flex:none}
+.accounts-page svg{width:25px;height:25px;display:block}
+.accounts-balance p{font-size:12px;color:#d4e9df;margin:0 0 5px}
+.accounts-balance strong{display:block;font-size:32px;letter-spacing:-1px;line-height:1.25;overflow-wrap:anywhere}
+.accounts-balance small{display:block;margin-top:8px;font-size:11px;color:#d4e9df}
+.accounts-shortcuts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.accounts-shortcut{display:flex;align-items:center;gap:10px;min-width:0;text-align:left;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:17px;padding:16px 13px;min-height:84px;box-shadow:0 3px 12px #1b493305}
+.shortcut-symbol{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:#edf6f0;color:var(--green)}
+.shortcut-symbol svg{width:21px;height:21px}
+.accounts-shortcut strong{display:block;font-size:14px;line-height:1.25}
+.accounts-shortcut small{display:block;font-size:11px;font-weight:400;color:var(--muted);margin-top:5px;line-height:1.3}
+.shortcut-arrow{margin-left:auto;color:#7b9d89;font-size:24px;font-weight:400}
+.accounts-page .accounts-grid{gap:12px}
+.accounts-page .account-tile{padding:19px;border-radius:19px}
+.account-name{display:flex;align-items:center;gap:10px;min-width:0}
+.account-name h3{overflow-wrap:anywhere}
+.account-monogram{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:#eef5f0;color:var(--green);font-weight:750;flex:none}
+.account-tile .muted{font-size:12px;margin:18px 0 4px}
+.account-amount{display:block;font-size:27px;letter-spacing:-.6px;line-height:1.3;overflow-wrap:anywhere}
+.account-opening{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--muted);margin-top:15px;padding-top:12px;border-top:1px solid #edf1ed}
+.accounts-empty{text-align:center;padding:26px 22px}
+.empty-wallet{display:grid;place-items:center;margin:0 auto 12px;width:52px;height:52px;border-radius:17px;background:#edf6f0;color:#6e9a82}
+.accounts-empty h3{font-size:17px;margin-bottom:6px}
+.accounts-empty .muted{font-size:13px;max-width:330px;margin:0 auto 16px}
+.accounts-empty button{font-size:13px;min-height:44px}
+.accounts-page .accounts-contact{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:17px;margin-top:5px}
+.contact-symbol{color:#73917f;flex:none}
+.accounts-contact>div{min-width:0;flex:1}
+.accounts-contact h3{font-size:12px;line-height:1.3;margin:0 0 4px;color:var(--muted);font-weight:500}
+.accounts-contact p{font-size:14px;font-weight:600;margin:0;overflow-wrap:anywhere}
+.accounts-contact button{min-height:44px;flex:none;padding:8px 10px}
+.accounts-page .accounts-access{padding:0 18px;border-radius:17px;box-shadow:none}
+.accounts-access summary{display:flex;justify-content:space-between;align-items:center;cursor:pointer;list-style:none;min-height:54px;font-size:13px;font-weight:600}
+.accounts-access summary::-webkit-details-marker{display:none}
+.accounts-access summary span{font-size:22px;color:#7b9d89;transform:rotate(90deg)}
+.accounts-access[open] summary span{transform:rotate(-90deg)}
+.accounts-access-content{padding:12px 0 18px;border-top:1px solid var(--line)}
+.accounts-access-content h3{font-size:14px}
+.accounts-access-content .muted{font-size:12px;margin-top:14px}
+@media(max-width:600px){
+ body:not(.chat-keyboard) #shell>.top .wordmark{min-width:0;gap:8px}
+ body:not(.chat-keyboard) #shell>.top .wordmark b{font-size:14px;line-height:1.25;white-space:nowrap}
+ body:not(.chat-keyboard) #shell>.top .wordmark .app-mode{font-size:10px;line-height:1.3;color:#d4e9df;margin-top:3px}
+ body:not(.chat-keyboard) #shell>.top .brand-symbol.small{width:32px;height:32px;font-size:23px;border-radius:10px;flex:none}
+ body:not(.chat-keyboard) #shell>.top{padding:10px 12px;gap:8px}
+ body:not(.chat-keyboard) #shell>.top .user-actions{gap:4px}
+ body:not(.chat-keyboard) #shell>.top .user-actions .text-button{font-size:11px;padding:8px;min-height:36px}
+ body:not(.chat-keyboard) #shell>.top .user-actions .icon-button{width:34px;min-width:34px;min-height:36px}
+ body:not(.chat-keyboard) #shell>.top .user-actions>span{display:none}
+ .accounts-heading h2{font-size:25px}
+ .accounts-balance{padding:20px;gap:13px}
+ .accounts-balance strong{font-size:30px}
+ .accounts-shortcut{display:grid;grid-template-columns:30px 1fr;gap:9px;padding:14px 11px}
+ .shortcut-symbol{width:30px;height:34px}
+ .accounts-shortcut strong{font-size:13px}
+ .accounts-shortcut small{font-size:10px}
+ .shortcut-arrow{display:none}
+}
+@media(max-width:360px){
+ body:not(.chat-keyboard) #shell>.top .wordmark b{font-size:12px}
+ body:not(.chat-keyboard) #shell>.top .user-actions .text-button{font-size:10px;padding:6px}
+ body:not(.chat-keyboard) #shell>.top #manageUsers{padding-inline:5px}
+ .accounts-shortcuts{gap:8px}
+ .accounts-shortcut{padding:12px 9px;gap:7px;grid-template-columns:1fr}
+ .accounts-contact p{font-size:13px}
+}
+
