@@ -1,4 +1,5 @@
 import {mutateBudget,updateBudgetAlerts} from './budget.js';
+import {mutateInvestment,investmentAccountDelta} from './investments.js';
 import {creditFields,ensureInvoice,unlockedInvoice,mutateCredit} from './credit.js';
 export function validDate(s){return typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&!isNaN(Date.parse(s+'T12:00:00Z'))&&new Date(s+'T12:00:00Z').toISOString().slice(0,10)===s}
 export function validateEntry(p,state){
@@ -15,12 +16,13 @@ export function validateEntry(p,state){
 }
 export function summarize(state,month){
  const entries=state.entries.filter(e=>!e.deleted),paid=entries.filter(e=>e.status==='paid');
- const accounts=state.accounts.filter(a=>!a.deleted).map(a=>({...a,balance:a.openingCents+paid.filter(e=>e.accountId===a.id).reduce((v,e)=>v+(e.kind==='income'?e.cents:-e.cents),0)}));
+ const accounts=state.accounts.filter(a=>!a.deleted).map(a=>({...a,balance:a.openingCents+paid.filter(e=>e.accountId===a.id).reduce((v,e)=>v+(e.kind==='income'?e.cents:-e.cents),0)+investmentAccountDelta(state,a.id)}));
  const period=entries.filter(e=>(e.status==='paid'?e.paidDate:e.dueDate).startsWith(month));
  const sum=(kind,status)=>period.filter(e=>e.kind===kind&&e.status===status).reduce((v,e)=>v+e.cents,0);
  return {balance:accounts.reduce((v,a)=>v+a.balance,0),income:sum('income','paid'),expense:sum('expense','paid'),payable:sum('expense','pending'),receivable:sum('income','pending'),accounts};
 }
 export function mutate(state,p,user,now){
+ if(p.action.startsWith('investment'))return mutateInvestment(state,p,user,now||new Date().toISOString());
  const data=structuredClone(state),stamp=now||new Date().toISOString();data.cards||=[];data.invoices||=[];if(p.action.startsWith('budget'))return updateBudgetAlerts(mutateBudget(data,p,user,stamp),state,user,stamp);if(p.action==='card'||p.action==='ensureInvoices'||p.action.startsWith('invoice'))return mutateCredit(data,p,user,stamp);
  const uuid=x=>typeof x==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x);
  if(p.action==='account'){

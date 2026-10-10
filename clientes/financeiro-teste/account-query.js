@@ -1,4 +1,5 @@
 import {normalize} from './conversation.js';
+import {investmentAccountDelta} from './investments.js';
 const money=cents=>(cents/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 export function accountBalanceReply(text,data,today,awaitingChoice=false){
  const n=normalize(text);
@@ -14,7 +15,7 @@ export function accountBalanceReply(text,data,today,awaitingChoice=false){
  if(!accounts.length)return {text:'Você ainda não tem contas cadastradas. Adicione uma conta em Contas.',awaitingChoice:false};
  if(matches.length!==1)return {text:(matches.length>1?'Encontrei mais de uma conta com esse nome.':'Qual conta você quer consultar?')+' '+(matches.length?matches:accounts).map(a=>a.name).join(', ')+'. Escreva o nome completo da conta.',awaitingChoice:true};
  const account=matches[0],entries=(data.entries||[]).filter(e=>!e.deleted&&e.accountId===account.id);
- const balance=account.openingCents+entries.filter(e=>e.status==='paid').reduce((sum,e)=>sum+(e.kind==='income'?e.cents:-e.cents),0);
+ const balance=account.openingCents+entries.filter(e=>e.status==='paid').reduce((sum,e)=>sum+(e.kind==='income'?e.cents:-e.cents),0)+investmentAccountDelta(data,account.id);
  const month=/\b(mes|mensal)\b/.test(n)?today.slice(0,7):null;
  const pending=entries.filter(e=>e.status==='pending'&&!e.cardId&&(!month||(e.dueDate||e.date)?.startsWith(month)));
  const sum=kind=>pending.filter(e=>e.kind===kind).reduce((total,e)=>total+e.cents,0);

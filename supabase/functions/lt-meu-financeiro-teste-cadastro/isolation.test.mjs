@@ -71,6 +71,16 @@ test('five independent registrations; approval required; sixth blocked; data and
  }
  const id=crypto.randomUUID();assert.equal((await api({action:'account',id,name:'Private account',openingCents:5000},tokens[0])).status,200);
  for(let i=0;i<5;i++){const own=await api({action:'state'},tokens[i]);assert.equal(own.body.data.accounts.length,i===0?1:0);}
+ const investmentId=crypto.randomUUID(),investmentDate='2026-10-10';
+ assert.equal((await api({action:'investmentCreate',id:investmentId,name:'Private investment',cents:0,date:investmentDate},tokens[0])).status,200);
+ const deposit={action:'investmentDeposit',id:crypto.randomUUID(),investmentId,accountId:id,version:1,cents:1000,date:investmentDate};
+ assert.equal((await api(deposit,tokens[0])).status,200);
+ assert.equal((await api(deposit,tokens[0])).status,200);
+ for(let i=1;i<5;i++){
+  assert.equal((await api({action:'state'},tokens[i])).body.data.investments,undefined);
+  assert.equal((await api({...deposit,id:crypto.randomUUID()},tokens[i])).status,400);
+ }
+ assert.equal((await api({action:'state',spaceId:slots[1].space},tokens[0])).status,403);
  assert.equal((await api({action:'chatAppend',messages:[{id:crypto.randomUUID(),role:'me',text:'Private message',time:new Date().toISOString()}]},tokens[0])).status,200);
  for(let i=1;i<5;i++){const r=await api({action:'chatState'},tokens[i]);assert.equal(r.status,200);assert.equal(JSON.stringify(r.body).includes('Private message'),false);}
  const partnerId=crypto.randomUUID(),readOnly={view:true,entries:false,invoices:false,accounts:false,cards:false,budgets:false};
@@ -82,6 +92,8 @@ test('five independent registrations; approval required; sixth blocked; data and
  const partnerLogin=await api({action:'login',username:'partner',password:'Partner123'});assert.equal(partnerLogin.status,200);
  const partnerState=await api({action:'state'},partnerLogin.body.token);assert.equal(partnerState.body.data.accounts[0].name,'Private account');
  assert.equal((await api({action:'entry'},partnerLogin.body.token)).status,403);
+ assert.equal((await api({...deposit,id:crypto.randomUUID()},partnerLogin.body.token)).status,403);
+ assert.equal((await api({action:'state'},partnerLogin.body.token)).body.data.investments[0].name,'Private investment');
  assert.equal((await api({action:'userCreate'},partnerLogin.body.token)).status,403);
  assert.equal(JSON.stringify((await api({action:'chatState'},partnerLogin.body.token)).body).includes('Private message'),false);
  assert.equal((await api({...partnerFields,id:crypto.randomUUID(),username:'another-partner'},tokens[0])).status,409);
