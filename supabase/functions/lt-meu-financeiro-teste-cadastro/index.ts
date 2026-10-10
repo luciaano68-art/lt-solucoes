@@ -11,7 +11,7 @@ export async function handler(req:Request,db=fetch){
  try{
   const raw=await req.text();if(raw.length>4096)return reply(413,{message:'Pedido muito grande.'});
   const p=JSON.parse(raw),admin=['adminList','approve'].includes(p.action),token=admin?p.adminKey:p.invite;
-  if(typeof token!=='string'||token.length!==43||hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token)))!==(admin?adminHash:inviteHash))return reply(403,{message:'Acesso inválido. Use o link correto.'});
+  if((admin||token)&& (typeof token!=='string'||token.length!==43||hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token)))!==(admin?adminHash:inviteHash)))return reply(403,{message:'Acesso inválido. Use o link correto.'});
   if(!['inviteStatus','register','adminList','approve'].includes(p.action))return reply(400,{message:'Opção inválida.'});
   const base=Deno.env.get('SUPABASE_URL')+'/rest/v1/lt_pf_users_internal',secret=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const h={apikey:secret,Authorization:'Bearer '+secret,'Content-Type':'application/json'};

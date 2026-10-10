@@ -32,7 +32,7 @@ test('five independent registrations; approval required; sixth blocked; data and
  assert.equal((await registration({invite:'wrong',username:'wrong'})).status,403);assert.equal(writes,0);
  assert.equal((await registration({username:'bad',password:'short'})).status,400);assert.equal(writes,0);
  // Duplicate username must not consume another slot.
- assert.equal((await registration({username:'person0'})).status,200);
+ assert.equal((await registration({invite:null,username:'person0'})).status,200);
  assert.equal((await registration({username:'person0'})).status,409);
  const results=await Promise.all(Array.from({length:4},(_,i)=>registration({username:'person'+(i+1),spaceId:'someone-else',is_owner:false})));
  assert.deepEqual(results.map(r=>r.status),[200,200,200,200]);
