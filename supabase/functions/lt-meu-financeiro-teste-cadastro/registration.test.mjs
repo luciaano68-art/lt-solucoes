@@ -1,0 +1,22 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {stripTypeScriptTypes} from 'node:module';
+globalThis.Deno={env:{get:k=>k==='SUPABASE_URL'?'https://example.invalid':'server-only'},serve:()=>{}};
+const token='x'.repeat(43),digest=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))).toString('hex');
+const source=readFileSync(new URL('./index.ts',import.meta.url),'utf8').replace(/const inviteHash='[^']+'/,`const inviteHash='${digest}'`);
+const {handler}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source)).toString('base64'));
+const request=p=>new Request('https://example.invalid',{method:'POST',body:JSON.stringify({invite:token,...p})});
+test('invalid invite never reaches database',async()=>{const r=await handler(request({invite:'wrong',action:'register'}),()=>{throw Error('must not call')});assert.equal(r.status,403)});
+test('validation leaves owner unchanged',async()=>{const r=await handler(request({action:'register',username:'abc',name:'Test',password:'short'}),()=>{throw Error('must not call')});assert.equal(r.status,400)});
+test('atomic registration consumes invite, ignores supplied tenant and privileges, stores hash only',async()=>{
+ let active=false,stored;
+ const db=async(url,opts)=>{assert.match(url,/space_id=eq.dde8d6a6/);assert.match(url,/active=eq.false/);const body=JSON.parse(opts.body);assert.equal(body.space_id,undefined);assert.equal(body.permissions,undefined);assert.equal(body.is_owner,undefined);if(active)return Response.json([]);active=true;stored=body;return Response.json([{id:'test'}])};
+ const p={action:'register',username:'Test.Owner',name:'Test',password:'Test12345',spaceId:'someone-else',is_owner:false};
+ const results=await Promise.all([handler(request(p),db),handler(request(p),db)]);
+ assert.deepEqual(results.map(r=>r.status).sort(),[200,409]);assert.equal(stored.username,'test.owner');assert.equal(stored.password,undefined);assert.equal(stored.password_hash.length,64);
+ const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(p.password),'PBKDF2',false,['deriveBits']);
+ const hash=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:new TextEncoder().encode(stored.password_salt),iterations:210000},key,256);
+ assert.equal(stored.password_hash,Buffer.from(hash).toString('hex'));
+});
+test('duplicate username preserves invitation',async()=>{const r=await handler(request({action:'register',username:'existing',name:'Test',password:'Test12345'}),async()=>Response.json({}, {status:409}));assert.equal(r.status,409)});
