@@ -1,8 +1,12 @@
 import {setupAdminApp} from './admin-pwa.js';
+import {createSessionStore} from './session-store.js';
 const $=id=>document.getElementById(id),key='lt_pf_teste_admin';
+function storage(name){try{return window[name]}catch{return null}}
+const controlStore=createSessionStore({key:key+'_session',local:storage('localStorage'),session:storage('sessionStorage'),indexedDB:storage('indexedDB')});
+function legacyKey(){for(const name of ['localStorage','sessionStorage'])try{const value=storage(name)?.getItem(key);if(value)return value}catch{}return null}
 let loadBusy=false,hasControl=false,clientFilter='all';
 let adminKey=new URLSearchParams(location.hash.slice(1)).get('chave');
-try{if(adminKey)sessionStorage.setItem(key,adminKey);else adminKey=sessionStorage.getItem(key)||localStorage.getItem(key)}catch{}
+adminKey=adminKey||controlStore.readSync()?.token||legacyKey();
 history.replaceState(null,'',location.pathname);
 async function call(action,fields={}){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
@@ -11,7 +15,7 @@ async function call(action,fields={}){
 async function load(){
  if(loadBusy)return;loadBusy=true;
  $('reload').disabled=true;$('status').textContent='Buscando cadastros…';
- try{const data=await call('adminList');try{localStorage.setItem(key,adminKey)}catch{}$('controlAccess').hidden=true;$('registrations').replaceChildren();$('status').textContent=data.users.filter(u=>!u.shared&&!u.deleted).length+' clientes · '+data.users.filter(u=>u.shared&&!u.deleted).length+' acessos compartilhados · '+data.remaining+' ambientes disponíveis.';
+ try{const data=await call('adminList');await controlStore.save({token:adminKey,user:{id:'financeiro-teste-manager'}});$('controlKey').value='';$('controlAccess').hidden=true;$('registrations').replaceChildren();$('status').textContent=data.users.filter(u=>!u.shared&&!u.deleted).length+' clientes · '+data.users.filter(u=>u.shared&&!u.deleted).length+' acessos compartilhados · '+data.remaining+' ambientes disponíveis.';
   hasControl=true;$('pendingCount').textContent=data.users.filter(u=>!u.active&&!u.paused&&!u.deleted).length;$('resetCount').textContent=data.users.filter(u=>u.resetRequested&&!u.deleted).length;$('activeCount').textContent=data.users.filter(u=>u.active&&!u.deleted).length;$('pausedCount').textContent=data.users.filter(u=>u.paused&&!u.deleted).length;void adminApp.authorize();
   if(!data.users.length){const p=document.createElement('p');p.className='admin-empty';p.textContent='Nenhum cadastro recebido ainda. Os pedidos aparecerão aqui.';$('registrations').append(p);}
   const visible=data.users.filter(u=>clientFilter==='deleted'?u.deleted:!u.deleted&&(clientFilter==='all'||clientFilter==='active'&&u.active||clientFilter==='paused'&&u.paused||clientFilter==='pending'&&!u.active&&!u.paused||clientFilter==='reset'&&u.resetRequested));
@@ -30,7 +34,12 @@ async function load(){
 const adminApp=setupAdminApp(call,load);
 $('clientFilter').onchange=e=>{clientFilter=e.target.value;void load();};
 $('reload').onclick=load;
-if(adminKey)load();else{$('status').textContent='Entre com seu código de controle ou abra seu link exclusivo.';$('controlAccess').hidden=false;$('reload').disabled=true}
+async function restoreControl(){
+ $('controlAccess').hidden=true;$('status').textContent='Abrindo seu painel…';
+ adminKey=adminKey||(await controlStore.load())?.token;
+ if(adminKey)await load();else{$('status').textContent='Entre com seu código de controle ou abra seu link exclusivo.';$('controlAccess').hidden=false;$('reload').disabled=true}
+}
+void restoreControl();
 
 $('controlAccess').onsubmit=e=>{e.preventDefault();adminKey=$('controlKey').value.trim();load();};
 setInterval(()=>{if(hasControl&&!document.hidden&&!$('resetDialog')?.open)void load();},30000);

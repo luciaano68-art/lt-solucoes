@@ -1,5 +1,5 @@
-const CACHE='lt-financeiro-admin-v1',scope=self.registration.scope;
-const files=['./','./index.html','./admin.css','./manifest.json','../admin.js','../admin-pwa.js','../style.css','../icon-192.png','../icon-512.png'].map(p=>new URL(p,scope).href);
+const CACHE='lt-financeiro-admin-v2',scope=self.registration.scope;
+const files=['./','./index.html','./admin.css','./manifest.json','../session-store.js','../admin.js','../admin-pwa.js','../style.css','../icon-192.png','../icon-512.png'].map(p=>new URL(p,scope).href);
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(files)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('lt-financeiro-admin-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||!files.some(f=>new URL(f).pathname===new URL(e.request.url).pathname)||new URL(e.request.url).origin!==new URL(scope).origin)return;e.respondWith(fetch(e.request).then(r=>{if(r.ok)e.waitUntil(caches.open(CACHE).then(c=>c.put(e.request,r.clone())));return r;}).catch(()=>caches.match(e.request,{ignoreSearch:true})));});
