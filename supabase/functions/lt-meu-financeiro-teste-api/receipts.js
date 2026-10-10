@@ -1,6 +1,12 @@
 import {visibleData} from './privacy.js';
 const bucket='lt-financeiro-teste-comprovantes',maxBytes=3*1024*1024;
 const fail=(message,status=400)=>{throw Object.assign(Error(message),{status});};
+export function createReceiptStorage(root,secret,request=fetch){return async(path,opts)=>{
+ const response=await request(root+'/storage/v1'+path,{method:opts.method,headers:{apikey:secret,Authorization:'Bearer '+secret,'Content-Type':opts.mime||'application/json'},body:opts.bytes||(opts.json?JSON.stringify(opts.json):undefined)});
+ let result;try{result=await response.json();}catch{fail('Resposta do armazenamento indisponível.',503);}
+ if(opts.allowMissing&&!response.ok&&(response.status===404||response.status===400&&/bucket.*not found/i.test(result.message||'')))return null;
+ if(!response.ok)fail('Não foi possível salvar ou abrir o comprovante. Tente novamente.',503);return result;
+};}
 export function receiptFile(p){
  if(typeof p.base64!=='string'||p.base64.length>Math.ceil(maxBytes/3)*4||!/^[A-Za-z0-9+/]+={0,2}$/.test(p.base64))fail('Escolha uma foto de até 3 MB.');
  let bytes;try{bytes=Uint8Array.from(atob(p.base64),c=>c.charCodeAt(0));}catch{fail('Foto inválida.');}
@@ -30,7 +36,7 @@ export async function manageReceipt(p,user,{db,storage,stamp=new Date().toISOStr
    if(entry.version!==p.version)fail('O lançamento mudou. Atualize antes de anexar ou remover o comprovante.',409);
    if(file&&!uploaded){
     const existing=await storage('/bucket/'+bucket,{method:'GET',allowMissing:true});
-    if(existing===null)await storage('/bucket',{method:'POST',json:{id:bucket,name:bucket,public:false,file_size_limit:maxBytes,allowed_mime_types:['image/jpeg','image/png','image/webp']}});
+    if(existing===null){try{await storage('/bucket',{method:'POST',json:{id:bucket,name:bucket,public:false,file_size_limit:maxBytes,allowed_mime_types:['image/jpeg','image/png','image/webp']}});}catch(error){const created=await storage('/bucket/'+bucket,{method:'GET',allowMissing:true});if(!created||created.public!==false)throw error;}}
     else if(existing.public!==false)fail('Armazenamento do comprovante indisponível.',503);
     const path=user.space+'/'+entry.id+'/'+crypto.randomUUID()+'.'+file.extension;
     await storage('/object/'+bucket+'/'+path,{method:'POST',bytes:file.bytes,mime:file.mime});uploaded=path;

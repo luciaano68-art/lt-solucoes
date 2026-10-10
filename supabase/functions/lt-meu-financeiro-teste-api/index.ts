@@ -1,4 +1,4 @@
-import {manageReceipt} from './receipts.js';
+import {manageReceipt,createReceiptStorage} from './receipts.js';
 import {visibleData,privacyCutoff} from './privacy.js';
 import {normalizePhone} from './phone.js';
 import {greetingMessage} from './greeting.js';
@@ -40,7 +40,7 @@ Deno.serve(async(req:Request)=>{
   if(p.spaceId&&p.spaceId!==user.space)return reply({message:'Você não tem acesso a este financeiro.'},403);
   assertPermission(user,p.action);
   if(['receiptUpload','receiptGet','receiptRemove'].includes(p.action)){
-   const storage=async(path,opts)=>{const response=await fetch(Deno.env.get('SUPABASE_URL')+'/storage/v1'+path,{method:opts.method,headers:{apikey:secret,Authorization:'Bearer '+secret,'Content-Type':opts.mime||'application/json'},body:opts.bytes|| (opts.json?JSON.stringify(opts.json):undefined)});if(opts.allowMissing&&response.status===404)return null;if(!response.ok)throw Object.assign(Error('Não foi possível salvar ou abrir o comprovante. Tente novamente.'),{status:503});return response.json();};
+   const storage=createReceiptStorage(Deno.env.get('SUPABASE_URL'),secret);
    return reply(await manageReceipt(p,user,{db,storage}));
   }
   if(['usersList','userCreate','userUpdate'].includes(p.action)){const result=await manageUsers(user,p,{db,passwordHash,approvalRequired:true});if(p.action==='userCreate')void notifyAdmin('cadastro:'+result.user.id,'cadastro');return reply(result);}
