@@ -12,13 +12,15 @@ if(invite){
  const observer=new MutationObserver(()=>{if(!form.hidden){if(!$('loginForm').hidden)$('loginForm').hidden=true;if(!$('sessionRestore').hidden)$('sessionRestore').hidden=true}});
  observer.observe($('loginForm'),{attributes:true,attributeFilter:['hidden']});observer.observe($('sessionRestore'),{attributes:true,attributeFilter:['hidden']});
  $('existingLogin').onclick=()=>{form.hidden=true;observer.disconnect();$('loginForm').hidden=false;$('sessionRestore').hidden=true};
- call('inviteStatus').then(p=>{if(!p.available){form.hidden=true;observer.disconnect();clearInvite();$('loginForm').hidden=false;$('sessionRestore').hidden=true;$('loginError').textContent='Cadastro já criado. Entre com seu login e sua senha.'}}).catch(e=>{$('registrationError').textContent=e.name==='AbortError'?'Sem resposta. Tente novamente.':e.message});
+ call('inviteStatus').then(p=>{if(!p.available){form.hidden=true;observer.disconnect();clearInvite();$('loginForm').hidden=false;$('sessionRestore').hidden=true;$('loginError').textContent='Os cinco acessos de teste já foram cadastrados. Entre com seu login e sua senha.'}}).catch(e=>{$('registrationError').textContent=e.name==='AbortError'?'Sem resposta. Tente novamente.':e.message});
  form.onsubmit=async e=>{
   e.preventDefault();$('registrationError').textContent='';
   if($('newPassword').value!==$('confirmPassword').value){$('registrationError').textContent='As senhas precisam ser iguais.';return}
   $('registerButton').disabled=true;
-  try{const password=$('newPassword').value,p=await call('register',{name:$('newName').value,username:$('newLogin').value,password});clearInvite();form.reset();form.hidden=true;observer.disconnect();$('loginForm').hidden=false;$('username').value=p.username;$('password').value=password;$('loginForm').requestSubmit()}
+  try{const password=$('newPassword').value,p=await call('register',{name:$('newName').value,username:$('newLogin').value,password});clearInvite();form.reset();form.hidden=true;observer.disconnect();$('loginForm').hidden=false;$('username').value=p.username;$('password').value='';$('loginError').textContent='Cadastro recebido! Aguarde a autorização do responsável. Depois, entre com o login e a senha que você criou.'}
   catch(e){$('registrationError').textContent=e.name==='AbortError'?'Sem resposta. Tente novamente.':e.message}
   finally{$('registerButton').disabled=false}
  };
 }
+
+for(const button of document.querySelectorAll('[data-password-toggle]'))button.addEventListener('click',()=>{const input=$(button.dataset.passwordToggle),show=input.type==='password';input.type=show?'text':'password';button.textContent=show?'Ocultar senha':'Mostrar senha';button.setAttribute('aria-pressed',String(show));});
