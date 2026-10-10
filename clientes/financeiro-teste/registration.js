@@ -11,7 +11,7 @@ function clearInvite(){try{sessionStorage.removeItem(key)}catch{}history.replace
  $('loginForm').hidden=true;$('sessionRestore').hidden=true;form.hidden=false;
  const observer=new MutationObserver(()=>{if(!form.hidden){if(!$('loginForm').hidden)$('loginForm').hidden=true;if(!$('sessionRestore').hidden)$('sessionRestore').hidden=true}});
  observer.observe($('loginForm'),{attributes:true,attributeFilter:['hidden']});observer.observe($('sessionRestore'),{attributes:true,attributeFilter:['hidden']});
- $('createRegistration').onclick=()=>{form.hidden=false;$('loginForm').hidden=true;$('sessionRestore').hidden=true;observer.observe($('loginForm'),{attributes:true,attributeFilter:['hidden']});observer.observe($('sessionRestore'),{attributes:true,attributeFilter:['hidden']});};
+ $('createRegistration').onclick=()=>{$('forgotForm').hidden=true;form.hidden=false;$('loginForm').hidden=true;$('sessionRestore').hidden=true;observer.observe($('loginForm'),{attributes:true,attributeFilter:['hidden']});observer.observe($('sessionRestore'),{attributes:true,attributeFilter:['hidden']});};
  $('existingLogin').onclick=()=>{form.hidden=true;observer.disconnect();$('loginForm').hidden=false;$('sessionRestore').hidden=true};
  call('inviteStatus').then(p=>{if(!p.available){form.hidden=true;observer.disconnect();clearInvite();$('loginForm').hidden=false;$('sessionRestore').hidden=true;$('loginError').textContent='Os cinco acessos de teste já foram cadastrados. Entre com seu login e sua senha.'}}).catch(e=>{$('registrationError').textContent=e.name==='AbortError'?'Sem resposta. Tente novamente.':e.message});
  form.onsubmit=async e=>{
@@ -25,3 +25,7 @@ function clearInvite(){try{sessionStorage.removeItem(key)}catch{}history.replace
 }
 
 for(const button of document.querySelectorAll('[data-password-toggle]'))button.addEventListener('click',()=>{const input=$(button.dataset.passwordToggle),show=input.type==='password';input.type=show?'text':'password';button.textContent=show?'Ocultar senha':'Mostrar senha';button.setAttribute('aria-pressed',String(show));});
+
+$('forgotPassword').onclick=()=>{form.hidden=true;$('loginForm').hidden=true;$('sessionRestore').hidden=true;$('forgotForm').hidden=false;$('forgotUsername').value=$('username').value;$('forgotStatus').textContent='';};
+$('forgotBack').onclick=()=>{$('forgotForm').hidden=true;$('loginForm').hidden=false;};
+$('forgotForm').onsubmit=async e=>{e.preventDefault();$('forgotSubmit').disabled=true;$('forgotStatus').textContent='Enviando pedido…';try{const result=await call('requestReset',{username:$('forgotUsername').value});$('forgotStatus').textContent=result.message}catch(e){$('forgotStatus').textContent=e.name==='AbortError'?'Sem resposta. Tente novamente.':e.message}finally{$('forgotSubmit').disabled=false}};

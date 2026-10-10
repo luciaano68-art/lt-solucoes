@@ -9,11 +9,13 @@ const invite='x'.repeat(43),adminKey='y'.repeat(43),hash=async s=>Buffer.from(aw
 const source=readFileSync(new URL('./index.ts',import.meta.url),'utf8').replace("import {slots} from './slots.js';",'const slots='+JSON.stringify(slots)+';').replace(/const inviteHash='[^']+'/,`const inviteHash='${await hash(invite)}'`).replace(/const adminHash='[^']+'/,`const adminHash='${await hash(adminKey)}'`);
 const {handler}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source)).toString('base64'));
 const empty=()=>({accounts:[],entries:[],cards:[],invoices:[],budgets:[],budgetAlerts:[],budgetSettings:{enabled:false}});
-const tables={lt_pf_users_internal:slots.map(s=>({id:s.owner,space_id:s.space,username:s.placeholder,display_name:'Test',active:false,is_owner:true,permissions:{view:true,entries:true,invoices:true,accounts:true,cards:true,budgets:true},failed_attempts:0})),lt_pf_spaces_internal:slots.map(s=>({id:s.space,name:'Test',revision:0,data:empty()})),lt_pf_tokens_internal:[],lt_pf_chat_internal:[]};
+const tables={lt_pf_users_internal:slots.map(s=>({id:s.owner,space_id:s.space,username:s.placeholder,display_name:'Test',active:false,is_owner:true,permissions:{view:true,entries:true,invoices:true,accounts:true,cards:true,budgets:true},failed_attempts:0})),lt_pf_spaces_internal:slots.map(s=>({id:s.space,name:'Test',revision:0,data:empty()})),lt_pf_tokens_internal:[],lt_pf_chat_internal:[],lt_pf_teste_recovery_internal:[]};
 let writes=0;
 async function db(url,options={}){
- const u=new URL(url),table=tables[u.pathname.split('/').at(-1)],params=u.searchParams;
- const rows=table.filter(row=>[...params].every(([k,v])=>v.startsWith('eq.')?String(row[k])===v.slice(3):v.startsWith('gt.')?row[k]>v.slice(3):v.startsWith('in.(')?v.slice(4,-1).split(',').includes(row[k]):true));
+ const u=new URL(url),name=u.pathname.split('/').at(-1),params=u.searchParams;
+ if(name==='lt_pf_teste_reset_password_internal'){const p=JSON.parse(options.body),user=tables.lt_pf_users_internal.find(u=>u.id===p.p_user_id);if(!user)return Response.json(false);Object.assign(user,{password_salt:p.p_salt,password_hash:p.p_hash,failed_attempts:0,locked_until:null});tables.lt_pf_tokens_internal=tables.lt_pf_tokens_internal.filter(t=>t.user_id!==user.id);for(const q of tables.lt_pf_teste_recovery_internal)if(q.user_id===user.id)q.resolved_at=new Date().toISOString();return Response.json(true)}
+ const table=tables[name];
+ const rows=table.filter(row=>[...params].every(([k,v])=>v==='is.null'?row[k]==null:v.startsWith('eq.')?String(row[k])===v.slice(3):v.startsWith('gt.')?row[k]>v.slice(3):v.startsWith('in.(')?v.slice(4,-1).split(',').includes(row[k]):true));
  const method=options.method||'GET';if(method==='GET')return Response.json(structuredClone(rows));
  const body=options.body?JSON.parse(options.body):null;writes++;
  if(method==='PATCH'){
@@ -61,6 +63,22 @@ test('five independent registrations; approval required; sixth blocked; data and
  for(let i=1;i<5;i++){const r=await api({action:'chatState'},tokens[i]);assert.equal(r.status,200);assert.equal(JSON.stringify(r.body).includes('Private message'),false);}
  const outsider={...tables.lt_pf_users_internal[0],id:crypto.randomUUID(),username:'outsider',space_id:'outside'};tables.lt_pf_users_internal.push(outsider);
  assert.equal((await api({action:'login',username:'outsider',password:'Test12345'})).status,401);
- const member=tables.lt_pf_users_internal.find(u=>u.username==='person0');member.active=false;assert.equal((await api({action:'state'},tokens[0])).status,401);
+ const member=tables.lt_pf_users_internal.find(u=>u.username==='person0');
+ const before=JSON.stringify(tables.lt_pf_spaces_internal),passwordBefore=member.password_hash;
+ assert.equal((await registration({action:'requestReset',username:'person0',invite:null})).status,200);assert.equal(member.password_hash,passwordBefore);
+ assert.equal((await api({action:'state'},tokens[0])).status,200);
+ let listBefore=await (await registration({action:'adminList',adminKey})).json();assert.equal(listBefore.users.find(u=>u.id===member.id).resetRequested,true);
+ assert.equal((await registration({action:'resetPassword',adminKey:invite,userId:member.id,password:'New12345'})).status,403);
+ assert.equal((await registration({action:'resetPassword',adminKey,userId:'outside',password:'New12345'})).status,404);
+ assert.equal((await registration({action:'resetPassword',adminKey,userId:member.id,password:'short'})).status,400);
+ assert.equal((await registration({action:'resetPassword',adminKey,userId:member.id,password:'New12345'})).status,200);
+ assert.equal(JSON.stringify(tables.lt_pf_spaces_internal),before);assert.equal(member.active,true);
+ assert.equal((await api({action:'state'},tokens[0])).status,401);
+ assert.equal((await api({action:'state'},tokens[1])).status,200);
+ assert.equal((await api({action:'login',username:'person0',password:'Test12345'})).status,401);
+ const renewed=await api({action:'login',username:'person0',password:'New12345'});assert.equal(renewed.status,200);
+ member.active=false;assert.equal((await api({action:'state'},renewed.body.token)).status,401);
+ assert.equal((await registration({action:'resetPassword',adminKey,userId:member.id,password:'Pending123'})).status,200);assert.equal(member.active,false);
+ assert.equal((await api({action:'login',username:'person0',password:'Pending123'})).status,403);
  const list=await registration({action:'adminList',adminKey});const json=await list.json();assert.equal(json.users.length,5);assert.equal(JSON.stringify(json).includes('password_hash'),false);
 });
