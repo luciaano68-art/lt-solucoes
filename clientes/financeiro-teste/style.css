@@ -222,6 +222,27 @@ body{background:radial-gradient(ellipse at top left,#eaf2ed 0,transparent 50%),v
 .fixed-form-grid>div{min-width:0}
 .fixed-form-grid input[type=month]{min-width:0;max-width:100%;width:100%}
 .fixed-optional{font-size:10px;font-weight:400;color:var(--muted)}
+
+/* Conversation presentation only: keep scrolling, keyboard and saving unchanged. */
+.chat-mode .chat-stream{gap:9px;padding-block:10px 16px}
+.chat-mode .chat-stream:focus{outline:none}
+.chat-mode .chat-stream:focus-visible{outline:2px solid #91bda8;outline-offset:-2px;border-radius:12px}
+.chat-mode .chat-stream .bubble{font-size:14px;line-height:1.45;padding:11px 14px;border-radius:16px 16px 16px 4px;box-shadow:0 2px 9px #164f4303;max-width:91%}
+.chat-mode .chat-stream .bubble.me{max-width:86%;border-radius:16px 16px 4px 16px}
+.chat-mode .chat-stream .bubble>small{font-size:10px;line-height:1.3;margin-bottom:5px;font-weight:600}
+.chat-mode .message-time{font-size:9px;line-height:1.2;margin-top:5px;color:#718478}
+.chat-mode .chat-toolbar h2{font-size:18px}
+.chat-mode .chat-toolbar{padding-block:8px}
+.chat-mode .chat-saved{white-space:normal;min-width:0}
+.chat-saved-heading{display:flex;align-items:center;gap:7px;color:#22684e;font-size:12px;line-height:1.4}
+.chat-saved-check{width:20px;height:20px;display:grid;place-items:center;border-radius:50%;background:#e0f1e7;font-size:12px;flex:none}
+.chat-saved-amount{font-size:26px;line-height:1.25;letter-spacing:-.5px;font-weight:750;color:var(--green);margin:9px 0 5px;font-variant-numeric:tabular-nums}
+.chat-saved-account{font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.chat-saved-detail{font-size:11px;color:var(--muted);margin-top:3px}
+.chat-saved-note{font-size:11px;color:var(--muted);border-top:1px solid #e7eee9;margin-top:8px;padding-top:7px;line-height:1.5}
+.chat-mode .chat-stream .bubble button{min-height:44px;margin-top:10px}
+.chat-mode .chat-stream .bubble .preview-value{font-size:25px}
+@media(max-width:380px){.chat-mode .chat-stream .bubble{max-width:94%;padding:10px 12px}.chat-mode .chat-stream .bubble.me{max-width:88%}.chat-mode .chat-toolbar h2{font-size:17px}}
 #fixedEditor #fixedAccountHelp{padding:11px 12px;font-size:11px;line-height:1.6;border-radius:11px;background:#f0f6f2;margin:16px 0 0}
 #fixedEditor #saveFixed{font-size:14px;min-height:48px;margin-top:15px;border-radius:12px}
 #fixedEditor #fixedError{font-size:12px;margin:9px 0 0}
