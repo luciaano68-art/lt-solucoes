@@ -1,5 +1,16 @@
 export const categories=['Alimentação','Moradia','Transporte','Saúde','Lazer','Salário','Compras','Serviços','Outros'];
 export function normalize(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()}
+// Resolve a short bank name only when it identifies one card. Never pick the
+// first card when two customers/cards use the same bank.
+export function matchCreditCards(text,cards=[]){
+ const n=normalize(text),active=cards.filter(c=>!c.deleted);
+ const full=active.filter(c=>n.includes(normalize(c.name)));
+ if(full.length)return full;
+ const final=n.match(/\b(?:final|terminado em)\s*(\d{4})\b/);
+ if(final)return active.filter(c=>normalize(c.name).match(/\b(?:final|terminado em)\s*(\d{4})\b/)?.[1]===final[1]);
+ const words=new Set(n.split(/[^a-z0-9]+/));
+ return active.filter(c=>normalize(c.name).split(/[^a-z0-9]+/).some(w=>w.length>=4&&!['cartao','credito','final','platinum','mastercard','visa','gold','black','banco'].includes(w)&&words.has(w)));
+}
 export function moneyCents(value){let s=String(value).replace(/R\$/gi,'').replace(/\s/g,'');if(!/^-?\d+(?:[.,]\d+)*$/.test(s))return null;let negative=s.startsWith('-');s=s.replace(/^-/,'');let whole=s,fraction='';if(s.includes(',')){if(s.indexOf(',')!==s.lastIndexOf(','))return null;[whole,fraction]=s.split(',');whole=whole.replace(/\./g,'');}else if(s.includes('.')){const parts=s.split('.');if(parts.length===2&&parts[1].length<=2){[whole,fraction]=parts}else if(parts.slice(1).every(p=>p.length===3)){whole=parts.join('')}else return null;}if(fraction.length>2||!/^[0-9]+$/.test(whole)||fraction&&!/^\d+$/.test(fraction))return null;const n=Number(whole)*100+Number((fraction+'00').slice(0,2));return Number.isSafeInteger(n)?(negative?-n:n):null}
 function isoDate(y,m,d){const s=String(y).padStart(4,'0')+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');return new Date(s+'T12:00:00Z').toISOString().slice(0,10)===s?s:null}
 export function shiftDate(date,n){let d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
@@ -20,7 +31,7 @@ export function parseMessage(text,accounts,today,cards=[]){
  else if(/\bamanha\b/.test(n))date=shiftDate(today,1);else if(/\bontem\b/.test(n))date=shiftDate(today,-1);
  if(d||/\b(hoje|amanha|ontem)\b/.test(n)){if(!(p.status==='pending'&&/\b(a pagar|para pagar|a receber|para receber|vou pagar|vou receber|vence|vencimento)\b/.test(n)))p.date=date;p.dueDate=date}
  if(/\b(luciano|meu pessoal)\b/.test(n))p.scope='luciano';else if(/\byasmin\b/.test(n))p.scope='yasmin';else if(/\b(casal|nosso|nossa|compartilhado)\b/.test(n))p.scope='casal';
- const credit=/\b(cartao|credito)\b/.test(n)&&! /\bdebito\b/.test(n);const matches=cards.filter(c=>n.includes(normalize(c.name)));if(matches.length===1)p.cardId=matches[0].id;if(credit){p.credit=true;p.kind='expense';p.status='pending';delete p.accountId;}
+ const credit=/\b(cartao|credito)\b/.test(n)&&! /\bdebito\b/.test(n);const matches=matchCreditCards(text,cards);if(matches.length===1)p.cardId=matches[0].id;if(credit){p.credit=true;p.kind='expense';p.status='pending';delete p.accountId;}
  p.category=categoryOf(text);
  return p;
 }

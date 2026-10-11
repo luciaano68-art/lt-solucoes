@@ -1,8 +1,8 @@
-import {normalize,parseMessage,moneyCents} from './conversation.js';
+import {normalize,parseMessage,moneyCents,matchCreditCards} from './conversation.js';
 import {purchaseCycle,monthShift,invoiceDates,invoiceId} from './credit.js';
 export function installmentIntent(text){const n=normalize(text);return !/\b(quanto|qual|mostr|saldo|limite|recebi|transfer|pagar fatura)\w*/.test(n)&&/\b(parcelad\w*|parcelas?|\d+\s*x\b|\d+\s+vezes)\b/.test(n)&&/\b(comprei|compra|gastei|comprar)\b/.test(n);}
 export function installmentCount(text){const n=normalize(text),m=n.match(/\b(\d+)\s*(?:vezes|parcelas?|x)\b/);return m?Number(m[1]):null;}
-export function matchingCards(text,cards){const n=normalize(text),exact=cards.filter(c=>n===normalize(c.name));if(exact.length)return exact;return cards.filter(c=>normalize(c.name).split(/[^a-z0-9]+/).filter(w=>w.length>=4&&!['cartao','credito','final'].includes(w)).some(w=>new RegExp('\\b'+w+'\\b').test(n)));}
+export const matchingCards=matchCreditCards;
 export function createInstallmentsUI({getState,can,request,update,render,money,today,escape,say,clearOtherFlow}){
  let pending=null,saving=false,epoch=0;
  const reset=()=>{pending=null;saving=false;epoch++};
