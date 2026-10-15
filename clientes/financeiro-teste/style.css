@@ -243,6 +243,59 @@ body{background:radial-gradient(ellipse at top left,#eaf2ed 0,transparent 50%),v
 .chat-mode .chat-stream .bubble button{min-height:44px;margin-top:10px}
 .chat-mode .chat-stream .bubble .preview-value{font-size:25px}
 @media(max-width:380px){.chat-mode .chat-stream .bubble{max-width:94%;padding:10px 12px}.chat-mode .chat-stream .bubble.me{max-width:88%}.chat-mode .chat-toolbar h2{font-size:17px}}
+
+/* Conversation refresh: quieter chrome, more room for messages, clear composer. */
+.chat-mode #content{max-width:920px}
+.chat-mode .connection:not(.bad){display:none}
+.chat-mode .chat-top{border:0}
+.chat-mode .chat-toolbar{padding:12px 4px 9px;gap:10px}
+.chat-mode .chat-toolbar h2{font-size:16px;line-height:1.3;letter-spacing:-.3px}
+.chat-mode .chat-sync-status{display:inline-flex;align-items:center;gap:5px;font-size:10px}
+.chat-mode .chat-sync-status::before{content:'';width:5px;height:5px;border-radius:50%;background:#438769;flex:none}
+.chat-mode .chat-sync-status.pending::before{background:#ad792b}
+.chat-mode .chat-toolbar>button{min-height:44px;padding:9px 13px;border-radius:14px;font-size:12px;background:#e4eee8}
+.chat-mode .chat-stream{border:0;border-radius:0;box-shadow:none;background:transparent;padding:10px 4px 18px;gap:10px}
+.chat-mode .chat-stream:focus-visible{outline:1px dashed #91bda8;outline-offset:-1px;border-radius:4px}
+.chat-mode .chat-stream .bubble{max-width:88%;padding:10px 12px;border:1px solid #e3eae5;border-radius:17px 17px 17px 5px;box-shadow:none;font-size:14px;line-height:1.5}
+.chat-mode .chat-stream .bubble.me{max-width:85%;background:#e1eee7;border-color:transparent;border-radius:17px 17px 5px 17px}
+.chat-mode .chat-stream .bubble>small{font-size:10px;margin-bottom:4px;color:#547461}
+.chat-mode .message-time{font-size:9px;margin-top:5px;color:#7a897f}
+.chat-mode .chat-saved-heading{font-size:11px;gap:6px}
+.chat-mode .chat-saved-check{width:18px;height:18px;font-size:11px}
+.chat-mode .chat-saved-amount{font-size:24px;line-height:1.2;margin:7px 0 4px;letter-spacing:-.6px}
+.chat-mode .chat-saved-account{font-size:12px;line-height:1.4}
+.chat-mode .chat-saved-detail{font-size:10px;margin-top:3px}
+.chat-mode .chat-write{padding:7px 0 0;background:var(--paper);border-top:1px solid #e5ebe6}
+.chat-mode .chat-compose{align-items:center;gap:6px;padding:5px 6px;border-radius:24px;border:1px solid #cfddd3;box-shadow:0 2px 8px #164f4305}
+.chat-mode .chat-compose textarea{font-size:16px;padding:10px 11px;min-height:44px;line-height:1.4;border-radius:18px}
+.chat-mode .chat-compose textarea:focus{outline:none;box-shadow:none}
+.chat-mode .chat-compose:focus-within{border-color:#88b49e;box-shadow:0 0 0 2px #164f4310}
+.chat-mode .chat-compose button{width:44px;min-width:44px;height:44px;min-height:44px;border-radius:50%;font-size:24px}
+.chat-mode .chat-footnote{font-size:9px;margin:5px 0 7px}
+/* Put feedback above the conversation, never over the message input. */
+.chat-mode .toast{top:calc(var(--app-top,0px) + 76px);bottom:auto;width:max-content;max-width:calc(100vw - 32px);padding:9px 15px;border-radius:14px;font-size:12px;line-height:1.4;box-shadow:0 5px 22px #123d3526;pointer-events:none;text-align:center}
+.chat-mode.chat-keyboard .toast{top:calc(var(--app-top,0px) + 49px)}
+@media(max-width:600px){
+ .chat-mode #content{padding-inline:10px}
+ body.chat-mode:not(.chat-keyboard) #shell>.top{min-height:64px;padding:8px 12px;gap:8px;box-shadow:none}
+ body.chat-mode:not(.chat-keyboard) #shell>.top .wordmark{gap:8px;flex:1;min-width:0}
+ body.chat-mode:not(.chat-keyboard) #shell>.top .wordmark b{font-size:14px;line-height:1.3;white-space:nowrap}
+ body.chat-mode:not(.chat-keyboard) #shell>.top .brand-symbol.small{width:30px;height:30px;border-radius:10px;font-size:21px}
+ body.chat-mode:not(.chat-keyboard) #shell>.top .app-mode{font-size:10px;margin-top:1px}
+ body.chat-mode:not(.chat-keyboard) #shell>.top .user-actions{gap:2px}
+ body.chat-mode:not(.chat-keyboard) #shell>.top .user-actions button{min-height:44px;padding:7px;font-size:11px}
+ body.chat-mode:not(.chat-keyboard) #shell>.top #refresh{width:44px;min-width:44px;font-size:25px;background:transparent}
+ .chat-mode .bottom-nav{border-color:#e5ebe6;padding:5px 4px calc(5px + env(safe-area-inset-bottom))}
+ .chat-mode .bottom-nav button{min-height:48px;border-radius:15px;font-size:9px;font-weight:600;padding:4px 1px}
+ .chat-mode .bottom-nav button span{font-size:21px;line-height:1.2;margin-bottom:3px}
+ .chat-mode .bottom-nav button.active{background:#e4f0e9}
+}
+@media(max-width:360px){
+ body.chat-mode:not(.chat-keyboard) #shell>.top .brand-symbol.small{display:none}
+ body.chat-mode:not(.chat-keyboard) #shell>.top{padding-inline:10px}
+ .chat-mode .chat-stream .bubble{max-width:94%}
+ .chat-mode .chat-stream .bubble.me{max-width:91%}
+}
 #fixedEditor #fixedAccountHelp{padding:11px 12px;font-size:11px;line-height:1.6;border-radius:11px;background:#f0f6f2;margin:16px 0 0}
 #fixedEditor #saveFixed{font-size:14px;min-height:48px;margin-top:15px;border-radius:12px}
 #fixedEditor #fixedError{font-size:12px;margin:9px 0 0}
