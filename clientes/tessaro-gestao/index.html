@@ -1625,7 +1625,13 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
   const SUPABASE_URL = 'https://wwietlvweqsxfpejhhis.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_dArUUh2qpDqbzvjxXAEbNQ_hT6Y0y5y';
   const MASTER_EMAIL = '';
-  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const prototypeKeyStore='lt_tessaro_pdv_private_access_v1';
+  const accessFragment=new URLSearchParams(location.hash.slice(1)).get('access');
+  if(accessFragment){localStorage.setItem(prototypeKeyStore,accessFragment);history.replaceState(null,'',location.pathname+location.search);}
+  const prototypeAccessKey=localStorage.getItem(prototypeKeyStore)||'';
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY,{global:{headers:{'x-tessaro-prototype-key':prototypeAccessKey}}});
+  let prototypeRemoteVersion=null;
+  let prototypeSaveQueue=Promise.resolve();
   let onlineUser = null;
   let publicMode = false;
   let publicQuotationId = null;
@@ -1736,38 +1742,31 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
       return;
     }
 
-    if(!onlineUser) return;
-
+    if(!onlineUser||!prototypeAccessKey) return;
     clearTimeout(remoteSaveTimer);
-    remoteSaveTimer=setTimeout(async()=>{
-      const {error}=await supabaseClient
-        .from('platform_state')
-        .upsert({
-          id:'main',
-          data:db,
-          updated_at:new Date().toISOString()
-        },{onConflict:'id'});
-      if(error) console.error('Erro ao sincronizar:',error);
-    },250);
+    remoteSaveTimer=setTimeout(()=>saveRemoteNow().catch(error=>{
+      console.error('Falha ao sincronizar protótipo:',error);
+      let notice=document.querySelector('#prototypeSyncError');
+      if(!notice){notice=document.createElement('div');notice.id='prototypeSyncError';notice.className='notice error';notice.style.cssText='position:fixed;bottom:12px;right:12px;left:12px;z-index:9900';document.body.appendChild(notice);}
+      notice.textContent='Alterações guardadas neste aparelho. '+error.message;
+    }),250);
   }
 
-  async function saveRemoteNow(){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
-    const payload={
-      id:'main',
-      data:db,
-      updated_at:new Date().toISOString()
-    };
-    const {data,error}=await supabaseClient
-      .from('platform_state')
-      .upsert(payload,{onConflict:'id'})
-      .select('updated_at')
-      .single();
-    if(error) throw error;
-    return data;
+  function saveRemoteNow(){
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(db));
+    const snapshot=clone(db);
+    const operation=prototypeSaveQueue.catch(()=>{}).then(async()=>{
+      if(!prototypeAccessKey||prototypeRemoteVersion===null)throw new Error('Abra a base pelo seu acesso privado.');
+      const {data,error}=await supabaseClient.from('tessaro_pdv_prototype_state').update({data:snapshot}).eq('id','main').eq('version',prototypeRemoteVersion).select('version,updated_at').maybeSingle();
+      if(error)throw error;
+      if(!data)throw new Error('A base mudou em outro aparelho. Reabra o sistema antes de continuar.');
+      prototypeRemoteVersion=data.version;
+      document.querySelector('#prototypeSyncError')?.remove();
+      return data;
+    });
+    prototypeSaveQueue=operation;
+    return operation;
   }
-
-
 
   function parseBRL(value){
     if(typeof value==='number') return Number.isFinite(value)?value:0;
@@ -1843,40 +1842,14 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
 
 
   async function loadRemoteState(){
-    const {data,error}=await supabaseClient
-      .from('platform_state')
-      .select('data')
-      .eq('id','main')
-      .maybeSingle();
-
-    if(error) throw error;
-
-    if(data?.data){
-      const remote=data.data||{};
-      db={
-        ...clone(defaultData),
-        ...remote,
-        settings:{...defaultData.settings,...(remote.settings||{})},
-        master:{...defaultData.master,...(remote.master||{})},
-        companies:Array.isArray(remote.companies)?remote.companies:[],
-        users:Array.isArray(remote.users)?remote.users:[],
-        categories:Array.isArray(remote.categories)?remote.categories:[],
-        products:Array.isArray(remote.products)?remote.products:[],
-        suppliers:Array.isArray(remote.suppliers)?remote.suppliers:[],
-        quotations:Array.isArray(remote.quotations)?remote.quotations:[],
-        orders:Array.isArray(remote.orders)?remote.orders:[],
-        representatives:Array.isArray(remote.representatives)?remote.representatives:[],
-        visits:Array.isArray(remote.visits)?remote.visits:[],
-        units:Array.isArray(remote.units)?remote.units:clone(defaultData.units||[])
-      };
-    }else{
-      db=clone(defaultData);
-      const {error:insertError}=await supabaseClient
-        .from('platform_state')
-        .insert({id:'main',data:db});
-      if(insertError) throw insertError;
-    }
-
+    const {data,error}=await supabaseClient.from('tessaro_pdv_prototype_state').select('data,version').eq('id','main').maybeSingle();
+    if(error)throw error;
+    if(!data?.data)throw new Error('Acesso privado inválido. Abra pelo arquivo de acesso da base de teste.');
+    prototypeRemoteVersion=data.version;
+    const remote=data.data;
+    db={...clone(defaultData),...remote,settings:{...defaultData.settings,...(remote.settings||{})},master:{...defaultData.master,...(remote.master||{})}};
+    for(const field of ['companies','users','categories','products','suppliers','quotations','orders','representatives','visits','units'])if(!Array.isArray(db[field]))db[field]=[];
+    if(remote.prototypeFinance){const defaults=fin2Default();fin2State={...defaults,...remote.prototypeFinance,accounts:remote.prototypeFinance.accounts||defaults.accounts};localStorage.setItem(FIN2_KEY,JSON.stringify(fin2State));}
     localStorage.setItem(STORAGE_KEY,JSON.stringify(db));
   }
 
@@ -2025,6 +1998,10 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
   }
 
   async function initializeOnline(){
+    if(!prototypeAccessKey){
+      root('<div class="auth-wrap"><section class="auth-panel" style="grid-column:1/-1;padding:24px"><div class="auth-card" style="max-width:500px"><h2>Base de teste privada</h2><p>Abra pelo arquivo de acesso do TESSARO PDV PROTOTIPO para usar os cadastros do Consumer.</p></div></section></div>');
+      return;
+    }
     const params=new URLSearchParams(location.search);
 
     if(
@@ -2649,9 +2626,9 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
     return g;
   }
   function tessaroSaleProducts(){
-    const products=(db.products||[]).filter(p=>!p.companyId||p.companyId===session.companyId);
+    const products=(db.products||[]).filter(p=>p.active!==false&&(!p.companyId||p.companyId===session.companyId));
     const fallback=[{name:'X-Salada',price:23,icon:'🍔',category:'Lanches'},{name:'X-Bacon',price:26,icon:'🍔',category:'Lanches'},{name:'X-Tudo',price:30,icon:'🍔',category:'Lanches'},{name:'Batata 500g',price:22,icon:'🍟',category:'Porções'},{name:'Porção',price:53,icon:'🍽️',category:'Porções'},{name:'Refrigerante Lata',price:0,icon:'🥤',category:'Bebidas'},{name:'Refrigerante 2L',price:17,icon:'🥤',category:'Bebidas'},{name:'Marmita Normal',price:28,icon:'🍱',category:'Almoço'},{name:'Marmita Meia',price:20,icon:'🍱',category:'Almoço'}];
-    return products.length?products.map(p=>({id:p.id,name:p.name,barcode:p.barcode||p.code||'',price:Number(p.salePrice||p.price||0),icon:'•',category:p.categoryName||(db.categories||[]).find(c=>c.id===p.categoryId)?.name||p.category||'Outros'})):fallback.map((p,i)=>({...p,id:'pdv_default_'+i}));
+    return products.length?products.map(p=>({id:p.id,name:p.name,code:p.code||'',searchCode:p.searchCode||'',barcode:p.barcode||p.code||'',price:Number(p.salePrice||p.price||0),icon:'•',category:p.categoryName||(db.categories||[]).find(c=>c.id===p.categoryId)?.name||p.category||'Outros'})):fallback.map((p,i)=>({...p,id:'pdv_default_'+i}));
   }
 
   function pdvPage(){
@@ -2707,7 +2684,7 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
       const closeSave=()=>{if(cart.length)persistOrder('Aberto');wrap.remove();pdvPage()};
       wrap.querySelector('#orderX').onclick=closeSave;wrap.querySelector('#orderBack').onclick=closeSave;
       wrap.querySelector('#openProducts').onclick=()=>openCatalog();
-      wrap.querySelector('#quickProductSearch').onkeydown=e=>{if(e.key==='Enter'){const q=e.target.value.trim().toLowerCase(),p=shown.find(x=>String(x.barcode||'').toLowerCase()===q)||shown.find(x=>x.name.toLowerCase().includes(q));if(!q)return;if(p)openProductPick(p);else alert('Produto não encontrado.')}};
+      wrap.querySelector('#quickProductSearch').onkeydown=e=>{if(e.key==='Enter'){const q=e.target.value.trim().toLowerCase(),p=shown.find(x=>[x.barcode,x.code,x.searchCode].some(code=>code&&String(code).toLowerCase()===q))||shown.find(x=>x.name.toLowerCase().includes(q));if(!q)return;if(p)openProductPick(p);else alert('Produto não encontrado.')}};
       wrap.querySelector('#linkCustomer').onclick=()=>{const name=prompt('Nome do cliente',wrap.querySelector('#orderCustomer').value);if(name!==null)wrap.querySelector('#orderCustomer').value=name};
       wrap.querySelector('#saveOrder').onclick=closeSave;
       wrap.querySelector('#printOrder').onclick=()=>{persistOrder('Aberto');window.print()};
@@ -2740,9 +2717,9 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
       receiveBtn.onclick=openPayment;draw();
 
       function openCatalog(){
-        const cat=document.createElement('div');cat.className='catalog-backdrop';let category='Todos',query='';const cats=['Todos','Lanches','Porções','Bebidas','Almoço','Janta','Adicionais','Outros'];
+        const cat=document.createElement('div');cat.className='catalog-backdrop';let category='Todos',query='';const cats=['Todos',...new Set(shown.map(p=>String(p.category||'Outros')))];
         cat.innerHTML=`<div class="catalog-modal"><div class="catalog-head"><button class="btn secondary" id="catalogClose">← Voltar</button><div class="pos-search"><span>⌕</span><input id="catalogSearch" placeholder="Buscar produto..."></div></div><div class="catalog-body"><aside class="catalog-cats">${cats.map((c,i)=>`<button data-cat="${c}" class="${i===0?'active':''}">${c}</button>`).join('')}</aside><main class="catalog-products"><div class="product-grid" id="catalogGrid"></div></main></div></div>`;document.body.appendChild(cat);
-        const drawCat=()=>{const list=shown.filter(p=>(category==='Todos'||String(p.category||'Outros').toLowerCase()===category.toLowerCase())&&(!query||p.name.toLowerCase().includes(query.toLowerCase())));cat.querySelector('#catalogGrid').innerHTML=list.map(p=>`<button class="product-tile" data-pick="${shown.indexOf(p)}"><div class="picon">${p.icon}</div><strong>${esc(p.name)}</strong><b>${money(p.price)}</b></button>`).join('');cat.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>openProductPick(shown[Number(b.dataset.pick)],cat))};
+        const drawCat=()=>{const list=shown.filter(p=>(category==='Todos'||String(p.category||'Outros').toLowerCase()===category.toLowerCase())&&(!query||[p.name,p.code,p.barcode,p.searchCode].some(value=>String(value||'').toLowerCase().includes(query.toLowerCase()))));cat.querySelector('#catalogGrid').innerHTML=list.map(p=>`<button class="product-tile" data-pick="${shown.indexOf(p)}"><div class="picon">${p.icon}</div><strong>${esc(p.name)}</strong><b>${money(p.price)}</b></button>`).join('');cat.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>openProductPick(shown[Number(b.dataset.pick)],cat))};
         cat.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{category=b.dataset.cat;cat.querySelectorAll('[data-cat]').forEach(x=>x.classList.toggle('active',x===b));drawCat()});cat.querySelector('#catalogSearch').oninput=e=>{query=e.target.value;drawCat()};cat.querySelector('#catalogClose').onclick=()=>cat.remove();drawCat();
       }
       function openProductPick(p,catalog=null){
@@ -2800,7 +2777,7 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
           <main class="prototype-gateway-main">
             <div style="font-size:11px;font-weight:900;letter-spacing:.12em;color:#8391a4;margin-bottom:8px">ACESSO AO SISTEMA</div>
             <h1 style="font-size:28px;margin-bottom:8px">Onde você deseja entrar?</h1>
-            <p>Escolha o ambiente de trabalho. Você poderá trocar de área a qualquer momento.</p>
+            <p>Escolha o ambiente de trabalho. Você poderá trocar de área a qualquer momento.</p>${db.prototypeImport?`<div class="notice info"><strong>Base de teste Consumer · 15/10/2026</strong><br>${Number(db.prototypeImport.summary?.products||0)} produtos · ${Number(db.prototypeImport.summary?.complements||0)} complementos · ${Number(db.prototypeImport.summary?.customers||0)} clientes com saldo</div>`:''}
             <div class="prototype-entry-grid">
               <button id="enterOperation" class="prototype-entry">
                 <div class="entry-icon">▣</div>
@@ -3028,7 +3005,7 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
   }
 
   // TESSARO_FINANCEIRO_PDF_V1
-  const FIN_STORAGE_KEY='tessaro_financeiro_conciliacao_v1';
+  const FIN_STORAGE_KEY='lt_tessaro_pdv_prototype_reconciliation_v1';
   const FIN_CATEGORIES=['Venda PIX','Cartão / Getnet','Fornecedor','Funcionários','Impostos','Tarifas / Juros','Empréstimos / Parcelas','Transferência entre contas','Aplicação / Resgate','Saque / Dinheiro','Outros'];
   let finState=(()=>{try{return JSON.parse(localStorage.getItem(FIN_STORAGE_KEY))||{imports:[],selected:null}}catch{return {imports:[],selected:null}}})();
 
@@ -3151,7 +3128,7 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
     localStorage.setItem(FIN_RESET_TESTES_KEY,'done');
   }
 
-  const FIN2_KEY='tessaro_financeiro_core_v2';
+  const FIN2_KEY='lt_tessaro_pdv_prototype_finance_v1';
   let fin2Tab='overview';
   function fin2Default(){return {version:2,accounts:[
     {id:'cash',name:'Caixa / Troco',type:'cash',opening:0,openingDate:'',active:true},
@@ -3171,7 +3148,7 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
     {id:'capital_sicoob',name:'Cota Capital - Sicoob',type:'capital',opening:0,openingDate:'',active:true}
   ],movements:[],payables:[],receivables:[],reconciliations:[],cashClosings:[],createdAt:new Date().toISOString()}}
   let fin2State=(()=>{try{const x=JSON.parse(localStorage.getItem(FIN2_KEY));if(x&&x.accounts){const d=fin2Default();d.accounts.forEach(a=>{if(!x.accounts.some(b=>b.id===a.id))x.accounts.push(a)});x.reconciliations=Array.isArray(x.reconciliations)?x.reconciliations:[];return x}}catch(e){}return fin2Default()})();
-  function fin2Save(){localStorage.setItem(FIN2_KEY,JSON.stringify(fin2State))}
+  function fin2Save(){localStorage.setItem(FIN2_KEY,JSON.stringify(fin2State));db.prototypeFinance=clone(fin2State);save();}
   function fin2Uid(p='fin'){return p+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8)}
   function fin2Money(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0))}
   function fin2N(v){if(typeof v==='number')return v;let x=String(v||'').trim().replace(/R\$\s?/gi,'').replace(/\s/g,'');if(x.includes(',')&&x.includes('.'))x=x.replace(/\./g,'').replace(',','.');else if(x.includes(','))x=x.replace(',','.');return Number(x)||0}
@@ -6434,7 +6411,7 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
         await saveRemoteNow();
 
         const {data:verification,error:verificationError}=await supabaseClient
-          .from('platform_state')
+          .from('tessaro_pdv_prototype_state')
           .select('data')
           .eq('id','main')
           .single();
@@ -6807,7 +6784,7 @@ input,select,textarea{border-radius:8px;border-color:#d7dee8;background:#fff}
         await saveRemoteNow();
 
         const {data:verification,error:verificationError}=await supabaseClient
-          .from('platform_state')
+          .from('tessaro_pdv_prototype_state')
           .select('data,updated_at')
           .eq('id','main')
           .single();
@@ -10762,7 +10739,7 @@ Clientes quitados não entram no total a receber e nenhum saldo será alterado.`
 
   initializeOnline().catch(error=>{
     console.error(error);
-    showLogin(error.message||'Falha ao conectar ao banco online.');
+    root('<div class="card notice error" style="margin:30px"><h2>Não foi possível abrir a base de teste</h2><p>'+esc(error.message||'Confira sua conexão e seu acesso privado.')+'</p><button class="btn primary" id="retryPrototype">Tentar novamente</button></div>');document.querySelector('#retryPrototype').onclick=()=>location.reload();
   });
 })();
 </script>
