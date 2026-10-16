@@ -59,7 +59,8 @@ function invoiceQueryMonth(n,today){
  const numeric=n.match(/\b(0?[1-9]|1[0-2])\/(\d{4})\b/);if(numeric)return numeric[2]+'-'+numeric[1].padStart(2,'0');
  const iso=n.match(/\b(\d{4})-(0[1-9]|1[0-2])\b/);if(iso)return iso[0];
  if(/\b(todas|todos|historico|todo o periodo)\b/.test(n))return null;
- if(/\b(mes|mensal|atual)\b/.test(n)||/\bfatura\b/.test(n)){
+ if(/\b(mes|mensal|atual)\b/.test(n)){
+  if(!/\b(passado|anterior|proximo|seguinte)\b|mes que vem|vencimento|vence/.test(n))return null;
   const d=new Date(today.slice(0,7)+'-01T12:00:00Z');
   if(/\b(passado|anterior)\b/.test(n))d.setUTCMonth(d.getUTCMonth()-1);
   else if(/\b(proximo|seguinte)\b|mes que vem/.test(n))d.setUTCMonth(d.getUTCMonth()+1);
@@ -73,7 +74,10 @@ export function invoiceValueReply(text,data,today){
  const n=normalize(text);
  if(!/\bfaturas?\b/.test(n)||!(/\b(valor|valores|quanto|qual|quais|total|mostre|mostrar|ver|consulta|consultar)\b/.test(n)||/^faturas?(?: a pagar)?[.!?]*$/.test(n)))return null;
  if(/\b(fechar|feche|fechou|fechamento|pagar|paguei|pagamento|lancar|registrar|gastei|comprei)\b/.test(n.replace(/\ba pagar\b/g,'')))return null;
- const cards=data.cards||[],month=invoiceQueryMonth(n,today),showItems=!month||/\b(compras|itens|detalhe|detalhes|detalhada|detalhado)\b/.test(n);
+ const cards=data.cards||[],month=invoiceQueryMonth(n,today);
+ const paidOnly=/\b(pagas|paga|pagos|pago)\b/.test(n)&&!/\b(nao pagas|nao paga|nao pagos|nao pago)\b/.test(n);
+ const openOnly=!month&&!paidOnly&&!/\b(todas|todos|historico|todo o periodo)\b/.test(n)&&/\b(fatura|abertas?|mes|atual)\b/.test(n);
+ const showItems=!month&&!openOnly||/\b(compras|itens|detalhe|detalhes|detalhada|detalhado)\b/.test(n);
  if(!cards.length)return {text:'Você ainda não tem cartões cadastrados. Abra Cartões → Adicionar cartão.',awaitingChoice:false};
  let selected=cards.filter(c=>n.includes(normalize(c.name)));
  const longest=Math.max(0,...selected.map(c=>normalize(c.name).length));selected=selected.filter(c=>normalize(c.name).length===longest);
@@ -81,7 +85,6 @@ export function invoiceValueReply(text,data,today){
  if(!selected.length&&/\b(?:cartao|fatura)\s+(?:do|da|de)?\s*(?:sicredi|nubank|itau|bradesco|santander|inter|c6)\b/.test(n))return {text:'Não encontrei esse cartão. Cartões cadastrados: '+cards.map(c=>c.name).join(', ')+'.',awaitingChoice:false};
  if(!selected.length)selected=cards;
  const entries=(data.entries||[]).filter(e=>!e.deleted&&e.kind==='expense'&&e.cardId&&e.invoiceId);
- const paidOnly=/\b(pagas|paga|pagos|pago)\b/.test(n)&&!/\b(nao pagas|nao paga|nao pagos|nao pago)\b/.test(n);
  let sum=0;
  const lines=selected.map(card=>{
   const bills=new Map((data.invoices||[]).filter(b=>b.cardId===card.id).map(b=>[b.id,{...b}]));
@@ -90,8 +93,9 @@ export function invoiceValueReply(text,data,today){
    bills.set(entry.invoiceId,{id:entry.invoiceId,cardId:card.id,cycle,...invoiceDates(card,cycle),status:entries.filter(e=>e.invoiceId===entry.invoiceId).every(e=>e.status==='paid')?'paid':'open'});
   }
   const current=invoiceId(card.id,purchaseCycle(today,card,data.invoices||[]));
-  const relevant=[...bills.values()].filter(b=>!month||b.dueDate?.startsWith(month)).filter(b=>paidOnly?b.status==='paid':month&&!/\b(a pagar|nao pagas?|pendentes?)\b/.test(n)||b.status!=='paid').filter(b=>entries.some(e=>e.cardId===card.id&&e.invoiceId===b.id)||b.id===current).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
-  if(!relevant.length)return card.name+': R$ 0,00.\nNenhuma fatura '+(month?'registrada com vencimento em '+month.split('-').reverse().join('/')+'.':paidOnly?'paga registrada.':'com valor pendente registrada.');
+  if(openOnly&&!bills.has(current)){const cycle=current.slice(card.id.length+1);bills.set(current,{id:current,cardId:card.id,cycle,...invoiceDates(card,cycle),status:'open'});}
+  const relevant=[...bills.values()].filter(b=>!openOnly||b.id===current&&b.status==='open').filter(b=>!month||b.dueDate?.startsWith(month)).filter(b=>paidOnly?b.status==='paid':month&&!/\b(a pagar|nao pagas?|pendentes?)\b/.test(n)||b.status!=='paid').filter(b=>entries.some(e=>e.cardId===card.id&&e.invoiceId===b.id)||b.id===current).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
+  if(!relevant.length)return card.name+': R$ 0,00.\nNenhuma fatura '+(openOnly?'em aberto registrada.':month?'registrada com vencimento em '+month.split('-').reverse().join('/')+'.':paidOnly?'paga registrada.':'com valor pendente registrada.');
   let cardSum=0;
   const details=relevant.map(b=>{
    const items=entries.filter(e=>e.cardId===card.id&&e.invoiceId===b.id).sort((a,c)=>a.date.localeCompare(c.date));
@@ -100,5 +104,5 @@ export function invoiceValueReply(text,data,today){
   });
   return card.name+': '+money(cardSum)+'.\n'+details.join('\n\n');
  });
- return {text:(month?'Faturas com vencimento em '+month.split('-').reverse().join('/')+':':paidOnly?'Faturas pagas:':'Valores das faturas ainda não pagas:')+'\n\n'+lines.join('\n\n')+'\n\nTOTAL: '+money(sum)+'.\nConsidera somente as compras registradas no app.',awaitingChoice:false};
+ return {text:(openOnly?'Fatura atual em aberto:':month?'Faturas com vencimento em '+month.split('-').reverse().join('/')+':':paidOnly?'Faturas pagas:':'Valores das faturas ainda não pagas:')+'\n\n'+lines.join('\n\n')+'\n\nTOTAL: '+money(sum)+'.\nConsidera somente as compras registradas no app.',awaitingChoice:false};
 }
