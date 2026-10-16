@@ -1,3 +1,4 @@
+import {budgetEntryFeedback} from './budget.js';
 import {normalize,parseMessage,moneyCents,matchCreditCards} from './conversation.js';
 import {purchaseCycle,monthShift,invoiceDates,invoiceId} from './credit.js';
 export function installmentIntent(text){const n=normalize(text);return !/\b(quanto|qual|mostr|saldo|limite|recebi|transfer|pagar fatura)\w*/.test(n)&&/\b(parcelad\w*|parcelas?|\d+\s*x\b|\d+\s+vezes)\b/.test(n)&&/\b(comprei|compra|gastei|comprar)\b/.test(n);}
@@ -7,7 +8,7 @@ export function createInstallmentsUI({getState,can,request,update,render,money,t
  let pending=null,saving=false,epoch=0;
  const reset=()=>{pending=null;saving=false;epoch++};
  function prompt(){if(!pending.cents)say('Qual é o valor total da compra?');else if(!pending.count)say('Em quantas parcelas? Exemplo: 5 vezes.');else if(!pending.cardId)say('Em qual cartão? '+(getState().cards||[]).map(c=>c.name).join(' · '));else say('Confira as parcelas abaixo e confirme para salvar.');render();}
- async function confirm(){if(!pending||saving||!can('entries'))return;const p={...pending},generation=epoch;saving=true;render();try{const data=await request(p);if(generation!==epoch)return;update(data.data);pending=null;say('Compra parcelada registrada: '+p.count+' parcelas, total de '+money(p.cents)+'. O saldo das contas não foi descontado.');}catch(e){if(generation===epoch)say(e.message);}finally{if(generation===epoch){saving=false;render();}}}
+ async function confirm(){if(!pending||saving||!can('entries'))return;const p={...pending},generation=epoch;saving=true;render();try{const data=await request(p);if(generation!==epoch)return;update(data.data);pending=null;say('Compra parcelada registrada: '+p.count+' parcelas, total de '+money(p.cents)+'. O saldo das contas não foi descontado.');const entry=(data.data.entries||[]).find(e=>e.installmentPurchaseId===p.id);const feedback=budgetEntryFeedback(data.data,entry);if(feedback)say(feedback);}catch(e){if(generation===epoch)say(e.message);}finally{if(generation===epoch){saving=false;render();}}}
  async function handle(text){const n=normalize(text);if(!pending&&!installmentIntent(text))return false;if(!can('entries')){say('Seu acesso não permite registrar compras.');render();return true;}
   if(saving)return true;
   if(pending&&/^(cancelar|cancela|nao)$/.test(n)){reset();say('Parcelamento descartado. Nada foi salvo.');render();return true;}
