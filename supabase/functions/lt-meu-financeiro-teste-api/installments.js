@@ -19,7 +19,7 @@ export function mutateInstallmentPurchase(state,p,user,stamp){
  for(let i=0;i<plan.length;i++){
   const id=p.id.slice(0,30)+(i+1).toString(16).padStart(6,'0');
   if(state.entries.some(e=>e.id===id))throw Object.assign(Error('Identificador já utilizado. Tente novamente.'),{status:409});
-  next=mutate(next,{action:'entry',id,createOnly:true,entry:{...plan[i],kind:'expense',cardId:p.cardId,description:p.description,category:p.category,scope:p.scope,status:'pending',accountId:null}},user,stamp);
+  next=mutate(next,{action:'entry',id,createOnly:true,entry:{...(i===0&&p.receiptData?{receiptData:p.receiptData}:{}),...plan[i],kind:'expense',cardId:p.cardId,description:p.description,category:p.category,scope:p.scope,status:'pending',accountId:null}},user,stamp);
   Object.assign(next.entries.find(e=>e.id===id),{installmentPurchaseId:p.id,installmentSignature:signature,installmentNumber:i+1,installmentTotal:p.count,originalPurchaseDate:p.date});
  }
  return next;

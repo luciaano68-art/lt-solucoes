@@ -1,3 +1,4 @@
+import {validateReceiptData} from './receipt-data.js';
 import {mutateFixedExpense} from './fixed-expenses.js';
 import {guardPrivacy,stampPrivacy,mutateTransfer,transferAccountDelta,visibleData} from './privacy.js';
 import {mutateBudget,updateBudgetAlerts} from './budget.js';
@@ -15,7 +16,7 @@ export function validateEntry(p,state){
  if(typeof p.category!=='string'||!p.category.trim()||p.category.length>80)throw Error('Informe a categoria.');
  if(!p.cardId&&!state.accounts.some(a=>a.id===p.accountId&&!a.deleted))throw Error('Escolha uma conta deste financeiro.');
  if(!p.cardId&&p.status==='paid'&&!validDate(p.paidDate||p.date))throw Error('Informe a data do pagamento.');
- return {kind:p.kind,cents:p.cents,description:p.description.trim(),category:p.category.trim(),accountId:p.accountId,date:p.date,dueDate:p.dueDate||p.date,status:p.status,paidDate:p.status==='paid'?(p.paidDate||p.date):null,scope:p.scope,...(p.cardId?creditFields(p,state):{})};
+ return {...(p.receiptData!=null?{receiptData:validateReceiptData(p.receiptData)}:{}),kind:p.kind,cents:p.cents,description:p.description.trim(),category:p.category.trim(),accountId:p.accountId,date:p.date,dueDate:p.dueDate||p.date,status:p.status,paidDate:p.status==='paid'?(p.paidDate||p.date):null,scope:p.scope,...(p.cardId?creditFields(p,state):{})};
 }
 export function summarize(state,month){
  const entries=state.entries.filter(e=>!e.deleted),paid=entries.filter(e=>e.status==='paid');
@@ -48,6 +49,7 @@ function mutateUnchecked(state,p,user,now){
   else{if(data.accounts.some(a=>a.name.toLowerCase()===p.name.trim().toLowerCase()&&!a.deleted))throw Error('Já existe uma conta com esse nome.');data.accounts.push({id:p.id,name:p.name.trim(),openingCents:p.openingCents,version:1,createdBy:user.name,createdAt:stamp})}
  }else if(p.action==='entry'){
   if(!uuid(p.id))throw Error('Identificador inválido.');const existing=data.entries.find(e=>e.id===p.id),fields=validateEntry(existing&&p.createOnly&&p.entry?.cardId&&!p.entry.invoiceId?{...p.entry,invoiceId:existing.invoiceId}:p.entry,data);
+  if(!existing&&p.entry?.receiptData?.imageHash&&visibleData(state,user).entries.some(e=>!e.deleted&&e.receiptData?.imageHash===p.entry.receiptData.imageHash))throw Object.assign(Error('Esta foto já foi usada em um lançamento. Confira a lista antes de registrar novamente.'),{status:409});
   if(existing){if(p.createOnly){if(JSON.stringify(validateEntry(existing,data))!==JSON.stringify(fields))throw Object.assign(Error('Este lançamento já foi confirmado. Atualize a lista.'),{status:409});return state}if(existing.cardId){unlockedInvoice(data,existing.invoiceId);if(!fields.cardId)throw Error('Esta compra pertence a uma fatura. Para mudar a forma de pagamento, apague a compra da fatura aberta e registre uma nova movimentação.');}if(fields.cardId)unlockedInvoice(data,fields.invoiceId);if(existing.version!==p.version)throw Object.assign(Error('Este lançamento foi alterado por outra pessoa. Atualize antes de salvar.'),{status:409});if(existing.deleted)throw Error('Restaure o lançamento antes de editar.');if(!fields.cardId){delete existing.cardId;delete existing.invoiceId;}Object.assign(existing,fields,{version:existing.version+1,updatedBy:user.name,updatedAt:stamp})}
   else {if(fields.cardId)unlockedInvoice(data,fields.invoiceId);if(!p.createOnly)throw Object.assign(Error('Lançamento não encontrado.'),{status:404});data.entries.push({...fields,id:p.id,version:1,createdBy:user.name,createdAt:stamp,updatedBy:user.name,updatedAt:stamp,deleted:false})}
  }else if(['deleteEntry','restoreEntry','settleEntry'].includes(p.action)){
