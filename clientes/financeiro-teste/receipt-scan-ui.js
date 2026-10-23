@@ -1,70 +1,129 @@
 import {parseReceipt,receiptDate,receiptMoney,receiptDuplicates} from './receipt-reader.js';
-import {validateReceiptData} from './receipt-data.js';
-import {receiptImage,recognizeReceipt} from './receipt-ocr.js';
+import {receiptImage,recognizeReceipt,warmReceiptReader,releaseReceiptReader} from './receipt-ocr.js';
+import {receiptPaymentOptions,suggestedReceiptPayment,receiptPurchase} from './receipt-flow.js';
 import {categories} from './conversation.js';
-const amount=n=>n==null?'':(n/100).toFixed(2).replace('.',',');
 export function receiptDetailsHTML(data,escape,money){
  if(!data)return '';
  const rows=[['Estabelecimento',data.merchant],['CNPJ',data.cnpj],['Documento',data.documentNumber],['Data na notinha',[data.date?.split('-').reverse().join('/'),data.time].filter(Boolean).join(' ')],['Pagamento impresso',data.paymentMethod],['Final do cartão',data.cardLast4],['Parcelas impressas',data.installments]];
  for(const [key,label] of [['totalCents','Total lido'],['subtotalCents','Subtotal'],['discountCents','Desconto'],['feesCents','Acréscimos / frete'],['taxesCents','Tributos informativos'],['tenderedCents','Valor entregue'],['changeCents','Troco']])if(data[key]!=null)rows.push([label,money(data[key])]);
  return '<details class="receipt-data"><summary>Dados reconhecidos da notinha</summary><p class="muted">Leitura por foto, sujeita a erros. O valor do lançamento é o que você confirmou.</p><dl>'+rows.filter(([,v])=>v!==null&&v!==undefined&&v!=='').map(([k,v])=>'<div><dt>'+escape(k)+'</dt><dd>'+escape(v)+'</dd></div>').join('')+'</dl>'+(data.items?.length?'<h4>Linhas de produtos reconhecidas</h4><ul>'+data.items.map(i=>'<li>'+escape(i.line)+'</li>').join('')+'</ul>':'')+'<details><summary>Texto completo reconhecido</summary><pre>'+escape(data.rawText)+'</pre></details></details>';
 }
-export function createReceiptScanUI({getState,can,api,setState,render,toast,escape,money,openEntry,onPrepared,prepareInstallments,hasFlow,isPreparedCurrent=()=>true}){
- const $=id=>document.getElementById(id);let image=null,result=null,pending=null,epoch=0,controller=null,working=false;
- const dialog=()=>{
-  let el=$('receiptScan');if(el)return el;el=document.createElement('dialog');el.id='receiptScan';document.body.append(el);return el;
- };
- function reset(){epoch++;controller?.abort();controller=null;image=null;result=null;pending=null;working=false;$('receiptScan')?.close();if($('receiptScan'))$('receiptScan').innerHTML='';}
- function close(){epoch++;controller?.abort();controller=null;working=false;image=null;result=null;dialog().close();dialog().innerHTML='';}
+
+export function createReceiptScanUI({getState,can,api,setState,render,toast,escape,money,onSaved=()=>{},hasFlow=()=>false}){
+ const $=id=>document.getElementById(id);
+ let image=null,note=null,fields=null,purchaseId=null,epoch=0,controller=null,working=false,saving=false,editingBasics=false,displayedPlan='',queue=[];
+ const dateLabel=d=>d?d.split('-').reverse().join('/'):'Data não identificada';
+ const cash=n=>n==null?'':(n/100).toFixed(2).replace('.',',');
+ function dialog(){let el=$('receiptScan');if(!el){el=document.createElement('dialog');el.id='receiptScan';document.body.append(el);}return el;}
+ function clear(){epoch++;controller?.abort();controller=null;working=false;image=null;note=null;fields=null;purchaseId=null;editingBasics=false;displayedPlan='';}
+ function reset(){clear();saving=false;queue=[];releaseReceiptReader();$('receiptScan')?.close();if($('receiptScan'))$('receiptScan').innerHTML='';}
+ function close(){if(saving)return;clear();dialog().close();dialog().innerHTML='';}
  function show(){
   if(!can('entries'))return toast('Seu acesso não permite registrar compras.');
-  if(pending)return toast(pending.savedId?'A foto anterior ainda precisa ser anexada. Use “Tentar anexar foto”.':'Conclua ou cancele a conferência anterior.');
-  if(hasFlow())return toast('Conclua ou cancele o lançamento em andamento antes de ler outra notinha.');
-  image=null;result=null;paint();dialog().showModal();
+  if(hasFlow())return toast('Conclua ou cancele o lançamento em andamento primeiro.');
+  if(saving)return;
+  clear();paint();dialog().showModal();void warmReceiptReader().catch(()=>{});
  }
  function paint(){
-  const el=dialog();el.innerHTML='<div class="dialog-head"><h2>Ler notinha</h2><button type="button" id="scanClose" class="icon-button" aria-label="Fechar leitura">×</button></div><p class="muted">Fotografe a notinha inteira, reta e bem iluminada. Você confere todos os dados antes de salvar.</p><div class="scan-actions"><label class="scan-file">Tirar foto<input id="scanCamera" type="file" accept="image/*" capture="environment"></label><label class="scan-file secondary">Escolher foto<input id="scanGallery" type="file" accept="image/*"></label></div><p class="muted">A leitura acontece neste aparelho. A foto será anexada ao lançamento após sua confirmação. A primeira leitura precisa de internet para carregar o leitor.</p>'+(image?'<img class="scan-photo" id="scanPhoto" alt="Foto da notinha para conferir">':'')+'<p id="scanProgress" role="status" aria-live="polite"></p><p id="scanError" class="error" role="alert"></p>'+(result?formHTML():'');
-  if(image)$('scanPhoto').src=image.photo;
+  const ready=!!note,el=dialog();
+  el.innerHTML='<div class="dialog-head"><h2>'+(ready?'Confirmar compra':'Ler notinha')+'</h2><button type="button" id="scanClose" class="icon-button" aria-label="Fechar leitura">×</button></div>'+
+   (ready?reviewHTML():'<p class="muted">Fotografe a notinha inteira e bem iluminada.</p><div class="scan-actions"><label class="scan-file">Tirar foto<input id="scanCamera" type="file" accept="image/*" capture="environment"></label><label class="scan-file secondary">Escolher foto<input id="scanGallery" type="file" accept="image/*"></label></div><div class="scan-reading" '+(working?'':'hidden')+'><span class="scan-spinner" aria-hidden="true"></span><div><strong>Lendo sua notinha</strong><p id="scanProgress" role="status" aria-live="polite">Identificando valor, local e data…</p></div></div><p id="scanError" class="error" role="alert"></p>'+(working?'<button type="button" id="scanManual" class="secondary">Preencher só valor, local e data</button>':''));
   $('scanClose').onclick=close;el.oncancel=e=>{e.preventDefault();close();};
-  for(const id of ['scanCamera','scanGallery'])$(id).onchange=e=>{if(e.target.files?.[0])read(e.target.files[0]);};
-  if(result){$('scanRaw').value=result.rawText;$('scanReparse').onclick=()=>{result=parseReceipt($('scanRaw').value,{confidence:result.confidence});paint();};$('scanForm').onsubmit=prepare;}
+  if(!ready){
+   for(const id of ['scanCamera','scanGallery'])$(id).onchange=e=>{if(e.target.files?.[0])read(e.target.files[0]);};
+   if($('scanManual')){$('scanManual').disabled=!image;$('scanManual').onclick=manual;}
+  }else bindReview();
  }
- function formHTML(){
-  const field=(id,label,value='',type='text',required=false)=>'<label for="'+id+'">'+label+'</label><input id="'+id+'" type="'+type+'" value="'+escape(value||'')+'" '+(required?'required':'')+' '+(type==='text'?'maxlength="300"':'')+'>';
-  const data=getState();return '<form id="scanForm"><h3>Confira a leitura</h3><p class="scan-warning">'+escape(result.warnings.join(' ')||'Confira os dados com a foto. Reconhecimento automático pode errar.')+'</p>'+field('scanMerchant','Estabelecimento / descrição',result.merchant,'text',true)+field('scanTotal','Total da compra (R$)',amount(result.totalCents),'text',true)+field('scanDate','Data da compra',result.date,'date',true)+'<div class="form-grid"><div>'+field('scanCnpj','CNPJ',result.cnpj)+'</div><div>'+field('scanDoc','Número da nota / cupom',result.documentNumber)+'</div></div><label for="scanCategory">Categoria sugerida</label><select id="scanCategory">'+categories.map(c=>'<option '+(c===result.category?'selected':'')+'>'+escape(c)+'</option>').join('')+'</select><p>Pagamento impresso: <strong>'+escape(result.paymentMethod||'Não identificado')+'</strong>'+(result.cardLast4?' · final '+escape(result.cardLast4):'')+(result.installments?' · '+result.installments+' parcelas':'')+'.</p><label for="scanPayment">De qual conta ou cartão? Confira e selecione</label><select id="scanPayment" required><option value="">Selecione…</option>'+data.accounts.filter(a=>!a.deleted).map(a=>'<option value="account:'+escape(a.id)+'">Conta / dinheiro · '+escape(a.name)+'</option>').join('')+(data.cards||[]).filter(c=>!c.deleted).map(c=>'<option value="card:'+escape(c.id)+'">Crédito · '+escape(c.name)+'</option>').join('')+'</select><label for="scanStatus">Situação da compra</label><select id="scanStatus" required><option value="">Selecione…</option><option value="paid">Já paguei (conta / dinheiro)</option><option value="pending">A pagar / compra na fatura</option></select><label for="scanParts">Quantidade de parcelas (1 para à vista)</label><input id="scanParts" type="number" min="1" max="60" value="'+(result.installments||1)+'" required><p class="muted">Informe o valor total da compra acima. Com mais de uma parcela, você confere os valores e vencimentos antes de confirmar.</p>'+receiptDetailsHTML(result,escape,money)+'<details><summary>Corrigir o texto reconhecido</summary><p class="muted">Ajuste a leitura e toque em “Analisar texto novamente”. Isso recalcula os campos acima.</p><textarea id="scanRaw" rows="10" maxlength="24000" aria-label="Texto reconhecido da notinha"></textarea><button id="scanReparse" type="button" class="secondary">Analisar texto novamente</button></details><label class="scan-check"><input id="scanDuplicate" type="checkbox"> Se já existe uma compra parecida, conferi e esta é outra compra.</label><p id="scanPrepareError" class="error" role="alert"></p><button type="submit">Conferir lançamento</button><p class="muted">Nada será salvo nesta etapa. Você verá o valor e a fatura de cada parcela antes de confirmar.</p></form>';
+ function reviewHTML(){
+  const missing=!note.totalCents||!note.date||!note.merchant;
+  const basic=(key,label,value,type='text')=>'<div data-basic="'+key+'" '+(!editingBasics&&value?'hidden':'')+'><label for="scan'+key+'">'+label+'</label><input id="scan'+key+'" type="'+type+'" value="'+escape(value||'')+'" '+(key==='Total'?'inputmode="decimal"':key==='Merchant'?'maxlength="300"':'')+' required></div>';
+  const options=receiptPaymentOptions(getState()),suggestion=suggestedReceiptPayment(note,getState()),warning=note.confidence!==null&&note.confidence<70?'A foto ficou difícil de ler. Confira o valor e o local.':'';
+  const ordered=[...options].sort((a,b)=>(/crédito/i.test(note.paymentMethod)?Number(b.credit)-Number(a.credit):Number(a.credit)-Number(b.credit)));
+  return '<form id="scanForm"><div class="scan-summary"><div class="scan-summary-head"><span>Valor da compra</span><button id="scanEdit" type="button" class="text-button">Corrigir</button></div><strong id="scanValue" class="scan-value">'+(note.totalCents?escape(money(note.totalCents)):'Qual foi o valor?')+'</strong><h3 id="scanLocal">'+escape(note.merchant||'Onde foi a compra?')+'</h3><p id="scanWhen">'+escape(dateLabel(note.date))+' · '+escape(note.category||'Outros')+'</p></div>'+
+   (missing?'<p class="scan-nudge">Falta só completar o que não consegui ler.</p>':'')+
+   (warning?'<p class="scan-nudge">'+warning+'</p>':'')+
+   '<div class="scan-basics">'+basic('Total','Valor total (R$)',fields.total)+basic('Merchant','Local da compra',fields.merchant)+basic('Date','Data da compra',fields.date,'date')+'</div>'+
+   '<fieldset class="scan-sources"><legend>Como você pagou?</legend><div class="scan-payment-options">'+ordered.map(o=>'<button type="button" data-scan-payment="'+escape(o.value)+'" class="scan-payment" aria-pressed="'+(o.value===fields.payment)+'"><span>'+escape(o.label)+'</span><small>'+(o.credit?'Cartão de crédito':'Conta / Pix / débito / dinheiro')+'</small></button>').join('')+'</div>'+
+   (!options.length?'<p class="error">Cadastre uma conta ou um cartão na tela principal.</p>':'')+
+   '<p id="scanPaymentHint" class="muted">'+escape(fields.payment===suggestion.value?suggestion.reason:'')+'</p></fieldset>'+
+   '<div id="scanPlan" class="scan-plan" aria-live="polite"></div><div id="scanDuplicateNotice"></div>'+
+   '<details id="scanMore" class="scan-more"><summary>Mais opções e detalhes da nota</summary><label for="scanCategory">Categoria</label><select id="scanCategory">'+categories.map(c=>'<option '+(c===fields.category?'selected':'')+'>'+escape(c)+'</option>').join('')+'</select><label for="scanParts">Parcelas (1 para à vista)</label><input id="scanParts" type="number" min="1" max="60" value="'+fields.count+'"><label class="scan-check" id="scanUnpaidLabel"><input type="checkbox" id="scanUnpaid">Ainda vou pagar esta compra</label><label for="scanScope">De quem é?</label><select id="scanScope"><option value="casal">Compartilhado</option><option value="luciano">Pessoal</option><option value="yasmin">Outra pessoa</option></select><details class="scan-original"><summary>Ver foto e dados reconhecidos</summary><img id="scanPhoto" class="scan-photo" alt="Foto da notinha">'+receiptDetailsHTML(note,escape,money)+'</details><details><summary>Corrigir o texto da leitura</summary><textarea id="scanRaw" rows="6" maxlength="24000" aria-label="Texto reconhecido"></textarea><button id="scanReparse" type="button" class="secondary">Analisar texto novamente</button></details></details>'+
+   '<p id="scanPrepareError" class="error" role="alert"></p><button id="scanConfirm" class="scan-confirm" type="submit">Confirmar compra</button><p class="scan-footnote">A foto fica anexada. Só salva ao confirmar.</p></form>';
+ }
+ function collect(){
+  Object.assign(fields,{total:$('scanTotal').value,merchant:$('scanMerchant').value,date:$('scanDate').value,category:$('scanCategory').value,count:Number($('scanParts').value),unpaid:$('scanUnpaid').checked,scope:$('scanScope').value,duplicateAck:$('scanDuplicate')?.checked||false});
+ }
+ function bindReview(){
+  $('scanPhoto').src=image.photo;$('scanRaw').value=note.rawText;$('scanUnpaid').checked=fields.unpaid;$('scanScope').value=fields.scope;
+  $('scanEdit').onclick=()=>{editingBasics=!editingBasics;document.querySelectorAll('#receiptScan [data-basic]').forEach(el=>{const input=el.querySelector('input');el.hidden=!editingBasics&&!!input.value;});$('scanEdit').textContent=editingBasics?'Pronto':'Corrigir';};
+  for(const id of ['scanTotal','scanMerchant','scanDate','scanCategory','scanParts','scanUnpaid','scanScope'])$(id).oninput=()=>{collect();updatePreview();};
+  document.querySelectorAll('[data-scan-payment]').forEach(b=>b.onclick=()=>{collect();fields.payment=b.dataset.scanPayment;document.querySelectorAll('[data-scan-payment]').forEach(c=>c.setAttribute('aria-pressed',String(c===b)));updatePreview();});
+  $('scanReparse').onclick=()=>{const payment=fields.payment;note={...parseReceipt($('scanRaw').value,{confidence:note.confidence}),imageHash:image.imageHash};initializeFields(payment);paint();};
+  $('scanForm').onsubmit=confirmPurchase;updatePreview();
+ }
+ function updatePreview(){
+  const value=receiptMoney(fields.total),source=receiptPaymentOptions(getState()).find(o=>o.value===fields.payment);
+  $('scanValue').textContent=value>0?money(value):'Qual foi o valor?';$('scanLocal').textContent=fields.merchant||'Onde foi a compra?';$('scanWhen').textContent=dateLabel(fields.date)+' · '+fields.category;
+  $('scanUnpaidLabel').hidden=!!source?.credit;
+  $('scanPaymentHint').textContent=source?(source.credit?'Vai para a fatura de '+source.label:fields.unpaid?'Fica pendente em '+source.label:'Já pago em '+source.label):'Toque em uma opção acima.';
+  // Preserve acknowledgement while updating the amount or payment selection.
+  const ack=fields.duplicateAck,similar=receiptDuplicates(getState(),{...note,merchant:fields.merchant,date:fields.date,totalCents:value}),samePhoto=similar.some(e=>e.receiptData?.imageHash===note.imageHash);
+  $('scanDuplicateNotice').innerHTML=samePhoto?'<p class="scan-warning">Esta foto já foi lançada. Confira os lançamentos.</p>':similar.length?'<div class="scan-warning"><strong>Existe uma compra parecida</strong><label class="scan-check"><input id="scanDuplicate" type="checkbox" '+(ack?'checked':'')+'>Conferi: esta é outra compra.</label></div>':'';
+  if($('scanDuplicate'))$('scanDuplicate').onchange=e=>{fields.duplicateAck=e.target.checked;};
+  $('scanConfirm').disabled=saving||samePhoto||!source;
+  displayedPlan='';let planHTML='';
+  try{const p=receiptPurchase(note,{...fields,duplicateAck:true},getState(),purchaseId);displayedPlan=JSON.stringify(p.rows);
+   if(p.rows.length>1)planHTML='<strong>'+p.rows.length+' parcelas · total '+escape(money(p.entry.cents))+'</strong><ul>'+p.rows.map(r=>'<li>'+r.number+'/'+p.rows.length+' · '+escape(money(r.cents))+' · '+dateLabel(r.dueDate)+'</li>').join('')+'</ul>';
+   else if(p.rows.length)planHTML='Na fatura com vencimento em <strong>'+dateLabel(p.rows[0].dueDate)+'</strong>';
+  }catch{}
+  $('scanPlan').innerHTML=planHTML;$('scanPlan').hidden=!planHTML;
+ }
+ function initializeFields(payment=''){
+  fields={total:cash(note.totalCents),merchant:note.merchant,date:note.date||'',payment:payment||suggestedReceiptPayment(note,getState()).value,category:note.category||'Outros',count:note.installments||1,unpaid:false,scope:'casal',duplicateAck:false};
  }
  async function read(file){
-  const generation=++epoch;controller?.abort();controller=new AbortController();working=true;result=null;image=null;paint();$('scanProgress').textContent='Preparando a foto…';
-  try{const prepared=await receiptImage(file);if(generation!==epoch)return;image=prepared;paint();$('scanProgress').textContent='Carregando o leitor…';const data=await recognizeReceipt(image.canvas,{signal:controller.signal,onProgress:t=>{if(generation===epoch)$('scanProgress').textContent=t;}});if(generation!==epoch)return;result=parseReceipt(data.text,{confidence:data.confidence});working=false;paint();if(!data.text.trim())$('scanError').textContent='Não encontrei texto legível. Tente outra foto.';}
-  catch(e){if(generation===epoch){working=false;paint();$('scanError').textContent=e.message;}}
- }
- function prepare(event){
-  event.preventDefault();if(working||!image||!result||!can('entries'))return;
+  const current=++epoch;controller?.abort();controller=new AbortController();working=true;note=null;fields=null;image=null;purchaseId=crypto.randomUUID();paint();
   try{
-   const cents=receiptMoney($('scanTotal').value),date=$('scanDate').value,merchant=$('scanMerchant').value.trim(),payment=$('scanPayment').value,status=$('scanStatus').value;
-   if(!cents||cents<0)throw Error('Informe o total correto da compra.');if(!receiptDate(date))throw Error('Informe a data correta da compra.');if(!merchant)throw Error('Informe o estabelecimento.');if(!payment||!status)throw Error('Escolha a conta ou cartão e a situação.');
-   const count=Number($('scanParts').value);if(!Number.isInteger(count)||count<1||count>60)throw Error('Informe de 1 a 60 parcelas. O valor acima deve ser o total da compra.');
-   const credit=payment.startsWith('card:'),id=payment.slice(payment.indexOf(':')+1),data=getState();
-   if(!(credit?(data.cards||[]):data.accounts).some(a=>a.id===id&&!a.deleted))throw Error('Conta ou cartão indisponível.');
-   if(credit&&status!=='pending')throw Error('Compras no crédito entram na fatura. Escolha “A pagar / compra na fatura”.');
-   if(count>1&&!credit)throw Error('Para distribuir parcelas entre faturas, selecione um cartão de crédito.');
-   if(count>cents)throw Error('O valor deve permitir pelo menos R$ 0,01 por parcela.');
-   const details=validateReceiptData({...result,merchant,date,totalCents:cents,installments:count,cnpj:$('scanCnpj').value.trim(),documentNumber:$('scanDoc').value.trim(),imageHash:image.imageHash});
-   const duplicates=receiptDuplicates(data,details);
-   if(duplicates.some(e=>e.receiptData?.imageHash===image.imageHash))throw Error('Esta foto já foi usada em um lançamento. Confira os lançamentos antes de registrar novamente.');
-   if(duplicates.length&&!$('scanDuplicate').checked)throw Error('Já existe uma compra parecida nesta data e valor. Confira a lista e marque a opção acima somente se for outra compra.');
-   const entry={id:crypto.randomUUID(),kind:'expense',cents,description:merchant,date,dueDate:date,paidDate:status==='paid'?date:null,status,category:$('scanCategory').value,scope:'casal',...(credit?{credit:true,cardId:id}:{accountId:id}),receiptData:details};
-   pending={id:entry.id,details,upload:image.upload};close();if(count>1)prepareInstallments({...entry,count});else{onPrepared(entry);openEntry(entry,true);}
-  }catch(e){$('scanPrepareError').textContent=e.message;}
+   const prepared=await receiptImage(file);if(current!==epoch)return;image=prepared;if($('scanManual'))$('scanManual').disabled=false;
+   const data=await recognizeReceipt(image.canvas,{signal:controller.signal,onProgress:text=>{if(current===epoch&&$('scanProgress'))$('scanProgress').textContent=text;}});
+   if(current!==epoch)return;note={...parseReceipt(data.text,{confidence:data.confidence}),imageHash:image.imageHash};working=false;initializeFields();paint();dialog().scrollTop=0;
+  }catch(e){if(current===epoch){working=false;paint();$('scanError').textContent=e.message;if(image){const b=document.createElement('button');b.type='button';b.textContent='Informar só o essencial';b.onclick=manual;$('scanError').after(b);}}}
  }
- function fields(id){return pending?.id===id?{receiptData:pending.details}:{};}
- async function afterSave(id,savedId=id){
-  if(pending?.id!==id)return;pending.savedId=savedId;const generation=epoch;
-  try{const entry=getState().entries.find(e=>e.id===savedId&&!e.deleted);if(!entry)throw Error('Lançamento indisponível.');const saved=await api({action:'receiptUpload',id:savedId,version:entry.version,...pending.upload});if(generation!==epoch)return;setState(saved.data);pending=null;toast('Lançamento salvo com a foto da notinha.');}
-  catch{if(generation===epoch){toast('Lançamento salvo. A foto ainda não foi anexada; use “Tentar anexar foto”.');render();}}
+ function manual(){if(!image)return;epoch++;controller?.abort();working=false;note={...parseReceipt(''),imageHash:image.imageHash};initializeFields();paint();}
+ async function confirmPurchase(event){
+  event.preventDefault();if(saving||working||!note||!image||!can('entries'))return;
+  collect();let prepared;
+  try{prepared=receiptPurchase(note,fields,getState(),purchaseId);if(displayedPlan!==JSON.stringify(prepared.rows)){updatePreview();throw Error('A fatura mudou. Confira os vencimentos abaixo e confirme novamente.');}}
+  catch(e){$('scanPrepareError').textContent=e.message;return;}
+  const current=epoch,upload=image.upload;saving=true;$('scanConfirm').disabled=true;$('scanConfirm').textContent='Salvando…';$('scanPrepareError').textContent='';
+  dialog().querySelectorAll('input,select,button,textarea').forEach(el=>el.disabled=true);
+  try{
+   const response=await api(prepared.request);if(current!==epoch)return;setState(response.data);
+   const saved=prepared.request.action==='installmentPurchase'?response.data.entries.find(e=>e.installmentPurchaseId===purchaseId&&e.installmentNumber===1):response.data.entries.find(e=>e.id===purchaseId);
+   if(!saved)throw Error('Não consegui localizar o lançamento. Atualize a lista antes de tentar novamente.');
+   const item={id:saved.id,upload,status:'uploading',busy:false};queue.push(item);saving=false;close();
+   onSaved(saved,prepared);render();toast(prepared.rows.length>1?'Compra parcelada confirmada.':'Compra confirmada.');void uploadPhoto(item);
+  }catch(e){if(current===epoch){saving=false;dialog().querySelectorAll('input,select,button,textarea').forEach(el=>el.disabled=false);$('scanConfirm').textContent='Confirmar compra';$('scanPrepareError').textContent=e.message;updatePreview();}}
  }
- function cancelPending(){if(pending&&!pending.savedId)pending=null;}
- function banner(){return pending?.savedId?'<div class="card scan-warning"><p>O lançamento foi salvo. A foto ainda precisa ser anexada.</p><button data-scan-retry>Tentar anexar foto</button><button data-scan-drop class="secondary">Dispensar foto</button></div>':'';}
- function bind(){if(pending&&!pending.savedId&&!isPreparedCurrent(pending.id))pending=null;document.querySelectorAll('[data-scan-receipt]').forEach(b=>{b.hidden=!can('entries');b.onclick=show;});document.querySelectorAll('[data-scan-retry]').forEach(b=>b.onclick=async()=>{b.disabled=true;await afterSave(pending?.id,pending?.savedId);render();});document.querySelectorAll('[data-scan-drop]').forEach(b=>b.onclick=()=>{if(confirm('Manter o lançamento e dispensar o anexo desta foto?')){pending=null;render();}});}
- return {show,bind,reset,fields,afterSave,cancelPending,banner,get isBusy(){return working},get hasUnsaved(){return !!(pending||working||$('receiptScan')?.open)}};
+ async function uploadPhoto(item){
+  if(item.busy||!queue.includes(item)||!can('entries'))return;item.busy=true;item.status='uploading';
+  try{
+   const entry=getState().entries.find(e=>e.id===item.id&&!e.deleted);if(!entry)throw Error('Lançamento indisponível.');
+   const response=await api({action:'receiptUpload',id:item.id,version:entry.version,...item.upload});
+   // New scans may change epoch; logout/reset removes the item from the queue.
+   if(!queue.includes(item))return;
+   const current=getState(),row=current.entries.find(e=>e.id===item.id),uploaded=response.data.entries.find(e=>e.id===item.id);
+   if(row&&uploaded&&row.version===entry.version)setState({...current,entries:current.entries.map(e=>e.id===item.id?{...e,receipt:uploaded.receipt,version:uploaded.version,updatedAt:uploaded.updatedAt,updatedBy:uploaded.updatedBy}:e)});
+   queue=queue.filter(x=>x!==item);render();
+  }catch{if(queue.includes(item)){item.status='error';render();toast('Compra salva. Você pode tentar anexar a foto novamente.');}}
+  finally{item.busy=false;}
+ }
+ function banner(){return queue.filter(x=>x.status==='error').map(item=>'<div class="card scan-warning"><p>Compra salva. Falta anexar a foto.</p><button data-scan-retry="'+escape(item.id)+'">Tentar anexar foto</button><button data-scan-drop="'+escape(item.id)+'" class="secondary">Dispensar foto</button></div>').join('');}
+ function bind(){
+  document.querySelectorAll('[data-scan-receipt]').forEach(b=>{b.hidden=!can('entries');b.onclick=show;});
+  document.querySelectorAll('[data-scan-retry]').forEach(b=>b.onclick=()=>{const item=queue.find(x=>x.id===b.dataset.scanRetry);if(item){b.disabled=true;void uploadPhoto(item);}});
+  document.querySelectorAll('[data-scan-drop]').forEach(b=>b.onclick=()=>{queue=queue.filter(x=>x.id!==b.dataset.scanDrop);render();});
+ }
+ // Editor compatibility: photos now confirm here; existing receipt edits use their saved metadata.
+ return {show,bind,reset,banner,fields:()=>({}),afterSave:async()=>{},cancelPending:()=>{},get isBusy(){return working||saving},get hasUnsaved(){return !!(queue.length||working||saving||$('receiptScan')?.open)}};
 }

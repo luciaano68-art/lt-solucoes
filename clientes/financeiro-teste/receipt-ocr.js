@@ -1,5 +1,5 @@
 const base='https://cdn.jsdelivr.net/npm/';
-let library;
+let library,engine,enginePromise,idleTimer,progress=()=>{},generation=0,recognizing=false;
 function loadLibrary(){
  if(globalThis.Tesseract)return Promise.resolve(globalThis.Tesseract);
  if(!library)library=new Promise((resolve,reject)=>{
@@ -22,22 +22,30 @@ export async function receiptImage(file){
   const photo=canvas.toDataURL('image/jpeg',.86),bytes=Uint8Array.from(atob(photo.split(',')[1]),c=>c.charCodeAt(0));
   if(bytes.length>3*1024*1024)throw Error('A foto ficou muito grande. Escolha outra imagem.');
   const imageHash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(x=>x.toString(16).padStart(2,'0')).join('');
-  return {canvas,photo,upload:{base64:photo.split(',')[1],mime:'image/jpeg'},imageHash};
+  // Keep the attachment/hash stable; only resize the image used for recognition.
+  const longest=canvas.height/canvas.width>2.2?2600:1900,ratio=Math.min(1,longest/Math.max(canvas.width,canvas.height));
+  let scanCanvas=canvas;if(ratio<1){scanCanvas=document.createElement('canvas');scanCanvas.width=Math.round(canvas.width*ratio);scanCanvas.height=Math.round(canvas.height*ratio);scanCanvas.getContext('2d').drawImage(canvas,0,0,scanCanvas.width,scanCanvas.height);}
+  return {canvas:scanCanvas,photo,upload:{base64:photo.split(',')[1],mime:'image/jpeg'},imageHash};
  }finally{URL.revokeObjectURL(url);}
 }
+function releaseLater(){clearTimeout(idleTimer);idleTimer=setTimeout(()=>{if(!recognizing)releaseReceiptReader();},90000);}
+export function releaseReceiptReader(){generation++;clearTimeout(idleTimer);const old=engine;engine=null;enginePromise=null;progress=()=>{};old?.terminate().catch(()=>{});}
+export function warmReceiptReader(){
+ clearTimeout(idleTimer);if(engine){releaseLater();return Promise.resolve(engine);}if(enginePromise)return enginePromise;
+ const current=generation;
+ enginePromise=(async()=>{const Tesseract=await loadLibrary();if(current!==generation)throw Error('Leitura cancelada.');
+  const worker=await Tesseract.createWorker('por',1,{workerPath:base+'tesseract.js@6.0.1/dist/worker.min.js',corePath:base+'tesseract.js-core@6.0.0',langPath:base+'@tesseract.js-data/por@1.0.0/4.0.0_best_int',logger:m=>progress(m.status==='recognizing text'?'Lendo a notinha… '+Math.round(m.progress*100)+'%':'Preparando o leitor…'),errorHandler:()=>{}});
+  if(current!==generation){await worker.terminate();throw Error('Leitura cancelada.');}engine=worker;
+  await worker.setParameters({preserve_interword_spaces:'1',user_defined_dpi:'300'});releaseLater();return worker;
+ })().catch(e=>{if(current===generation)releaseReceiptReader();throw e;});return enginePromise;
+}
 export async function recognizeReceipt(canvas,{signal,onProgress=()=>{}}={}){
- let worker,timer,aborted=false;
- const abort=()=>{aborted=true;worker?.terminate().catch(()=>{});};signal?.addEventListener('abort',abort,{once:true});
+ if(recognizing)throw Error('Aguarde a leitura em andamento.');
+ let timer,abortHandler;const current=generation;recognizing=true;progress=onProgress;clearTimeout(idleTimer);
  try{
-  const Tesseract=await loadLibrary();if(signal?.aborted)throw Error('Leitura cancelada.');
-  // Explicit versions prevent an engine/model change from silently changing results.
-  const task=(async()=>{
-   worker=await Tesseract.createWorker('por',1,{workerPath:base+'tesseract.js@6.0.1/dist/worker.min.js',corePath:base+'tesseract.js-core@6.0.0',langPath:base+'@tesseract.js-data/por@1.0.0/4.0.0_best_int',logger:m=>onProgress(m.status==='recognizing text'?'Lendo a notinha… '+Math.round(m.progress*100)+'%':'Preparando o leitor…'),errorHandler:()=>{}});
-   if(aborted){await worker.terminate();throw Error('Leitura cancelada.');}
-   await worker.setParameters({preserve_interword_spaces:'1',user_defined_dpi:'300'});
-   return (await worker.recognize(canvas)).data;
-  })();
-  const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{abort();reject(Error('A leitura demorou demais. Tente uma foto mais próxima e bem iluminada.'));},90000);});
-  const data=await Promise.race([task,timeout]);if(aborted)throw Error('Leitura cancelada.');return data;
- }finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);if(worker)await worker.terminate().catch(()=>{});}
+  const cancelled=new Promise((_,reject)=>{abortHandler=()=>{releaseReceiptReader();reject(Error('Leitura cancelada.'));};if(signal?.aborted)abortHandler();else signal?.addEventListener('abort',abortHandler,{once:true});});
+  const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{releaseReceiptReader();reject(Error('A leitura demorou demais. Tente uma foto mais próxima e bem iluminada.'));},60000);});
+  const task=(async()=>{const worker=await warmReceiptReader();if(signal?.aborted)throw Error('Leitura cancelada.');return (await worker.recognize(canvas)).data;})();
+  return await Promise.race([task,cancelled,timeout]);
+ }catch(e){if(current===generation)releaseReceiptReader();throw e;}finally{clearTimeout(timer);signal?.removeEventListener('abort',abortHandler);progress=()=>{};recognizing=false;releaseLater();}
 }

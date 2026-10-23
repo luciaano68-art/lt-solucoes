@@ -25,7 +25,7 @@ import {summarize} from './ledger.js';
 import {parseMessage,normalize,moneyCents,categories,categoryOf,shiftDate} from './conversation.js';
 const endpoint='https://wwietlvweqsxfpejhhis.supabase.co/functions/v1/lt-meu-financeiro-teste-api',publicKey='sb_publishable_dArUUh2qpDqbzvjxXAEbNQ_hT6Y0y5y';
 const authKey='lt_pf_teste_auth_v1',$=id=>document.getElementById(id);
-const appVersion='2026-10-22-teste-v27';let appUpdating=false,workerRegistration=null,chatRedactBefore='';
+const appVersion='2026-10-23-teste-v28';let appUpdating=false,workerRegistration=null,chatRedactBefore='';
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>(n/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo'}).format(new Date()),formatDate=s=>s?s.split('-').reverse().join('/'):'—';
 const announcedBudgets=new Set(),announcedEntries=new Set();
@@ -159,7 +159,7 @@ function applyAccess(){
 // Credit card conversation and invoice screens. All writes still go through the authenticated API.
 let cardEditing=null,creditFlow=null;
 const fixedUI=createFixedExpensesUI({api,getState:()=>state,setState:data=>{state=data},can,render,toast,money,moneyCents,today,escape});
-const scanUI=createReceiptScanUI({getState:()=>state,can,api,setState:data=>{state=data},render,toast,escape,money,openEntry,onPrepared:entry=>{draft=entry;tab='chat';render()},prepareInstallments:p=>{tab='chat';installmentsUI.start(p);render()},isPreparedCurrent:id=>draft?.id===id||installmentsUI.pendingId===id||state.entries.some(e=>e.id===id||e.installmentPurchaseId===id),hasFlow:()=>!!(draft||creditFlow||dueFlow||installmentsUI.active||investmentsUI.active)});
+const scanUI=createReceiptScanUI({getState:()=>state,can,api,setState:data=>{state=data},render,toast,escape,money,onSaved:(entry,p)=>{addMessage('bot',(p.rows.length>1?'Compra parcelada':'Compra')+' de '+money(p.entry.cents)+' em '+entry.description+' confirmada pela foto.');const feedback=budgetEntryFeedback(state,entry);if(feedback)addMessage('bot',feedback);},hasFlow:()=>!!(draft||creditFlow||dueFlow||installmentsUI.active||investmentsUI.active)});
 const receiptsUI=createReceiptsUI({api,getState:()=>state,setState:data=>{state=data},can,render,toast,storageBase:'https://wwietlvweqsxfpejhhis.supabase.co/storage/v1'});
 const installmentsUI=createInstallmentsUI({getState:()=>state,can,request:api,afterSaved:(id,entryId)=>scanUI.afterSave(id,entryId),onCancel:()=>scanUI.cancelPending(),update:data=>{state=data},render,money,today,escape,say:text=>addMessage('bot',text),clearOtherFlow:()=>{draft=null;dueFlow=null;creditFlow=null;closeChoice=null;investmentsUI.reset();transfersUI.reset();}});
 const transfersUI=createTransfersUI({getState:()=>state,can,request:api,update:data=>{state=data},render,money,today,escape,say:text=>addMessage('bot',text),clearOtherFlow:()=>{draft=null;dueFlow=null;creditFlow=null;closeChoice=null;investmentsUI.reset();installmentsUI.reset();}});
