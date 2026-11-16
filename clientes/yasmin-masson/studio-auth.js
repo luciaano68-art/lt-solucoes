@@ -13,5 +13,5 @@ root.addEventListener('DOMContentLoaded',()=>{
  const session=credentials();if(session){status.textContent='Abrindo seu painel…';location.replace('./painel.html');return}
  form.addEventListener('submit',async event=>{event.preventDefault();if(button.disabled)return;button.disabled=true;button.textContent='Entrando…';status.textContent='';try{const result=await call({action:'login',username:document.getElementById('username').value,password:document.getElementById('password').value});localStorage.setItem(key,JSON.stringify(result));document.getElementById('password').value='';location.replace('./painel.html')}catch(e){status.textContent=e.message||'Confira a conexão e tente novamente.'}finally{button.disabled=false;button.textContent='Entrar no painel'}});
 });
-if('serviceWorker'in navigator)root.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1',{scope:'./',updateViaCache:'none'}).catch(()=>{}));
+if('serviceWorker'in navigator)root.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=2',{scope:'./',updateViaCache:'none'}).catch(()=>{}));
 })(window);

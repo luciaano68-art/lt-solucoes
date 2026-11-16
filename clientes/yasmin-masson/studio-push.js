@@ -13,7 +13,7 @@ async function enable(){
  if(busy)return;
  if(ios()&&!standalone()){message('No iPhone, abra pelo ícone instalado na tela inicial para ativar os avisos.',true);root.alert('Abra o aplicativo pelo ícone na tela inicial. Se ainda não instalou: Safari → Compartilhar → Adicionar à Tela de Início.');return}
  if(!('Notification'in root)||!('serviceWorker'in navigator)||!('PushManager'in root)){message('Este aparelho precisa de um navegador com notificações. No iPhone: iOS 16.4 ou mais recente e app instalado.',true);return}
- if(Notification.permission==='denied'){message('Avisos bloqueados. Libere as notificações deste app nos Ajustes do iPhone ou nas configurações do navegador.',true);root.alert('As notificações estão bloqueadas. No iPhone, abra Ajustes → Notificações → Yasmin Masson e permita os avisos. Depois volte ao app.');return}
+ if(Notification.permission==='denied'){message('Avisos bloqueados. Libere as notificações deste app nos Ajustes do iPhone ou nas configurações do navegador.',true);root.alert('As notificações estão bloqueadas. No iPhone, abra Ajustes → Notificações → Salão e permita os avisos. Depois volte ao app.');return}
  busy=true;
  // A solicitação ocorre diretamente no toque, antes de consultas à internet.
  const permission=Notification.permission==='granted'?Promise.resolve('granted'):Notification.requestPermission();

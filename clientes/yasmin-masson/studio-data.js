@@ -6,8 +6,8 @@ const baseURL='https://yasmin-studio.invalid';
 const copy=x=>JSON.parse(JSON.stringify(x));
 function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function week(){const w={};for(let i=0;i<7;i++)w[i]={active:i>0,open:'09:00',lunchStart:'12:00',lunchEnd:'13:30',close:i===6?'16:00':'18:00'};return w}
-function defaults(){return {version:3,nextId:1,bookings:[],series:[],hours:[{barber_id:1,weekly:week()},{barber_id:2,weekly:week()}],blocks:[],holidays:[],catalog:{business:{name:'Yasmin Masson',address:'',whatsapp:'',logo:'./logo.jpg'},services:[{id:1,name:'Serviço de teste 1',price:35,duration:30,active:true},{id:2,name:'Serviço de teste 2',price:25,duration:20,active:true},{id:3,name:'Serviço de teste 3',price:55,duration:50,active:true}],barbers:[{id:1,name:'Yasmin Masson',active:true,serviceIds:[1,2,3]},{id:2,name:'Profissional 2',active:true,serviceIds:[1,2,3]}]}}}
-function read(){let data;try{data=JSON.parse(root.localStorage.getItem(dataKey)||'null')}catch(e){}return data&&data.version===3?data:defaults()}
+function defaults(){return {version:3,nextId:1,bookings:[],series:[],hours:[{barber_id:1,weekly:week()},{barber_id:2,weekly:week()}],blocks:[],holidays:[],catalog:{business:{name:'Salão · Estética',address:'',whatsapp:'',logo:'./salon-mark.svg'},services:[{id:1,name:'Serviço de teste 1',price:35,duration:30,active:true},{id:2,name:'Serviço de teste 2',price:25,duration:20,active:true},{id:3,name:'Serviço de teste 3',price:55,duration:50,active:true}],barbers:[{id:1,name:'Profissional 1',active:true,serviceIds:[1,2,3]},{id:2,name:'Profissional 2',active:true,serviceIds:[1,2,3]}]}}}
+function read(){let data;try{data=JSON.parse(root.localStorage.getItem(dataKey)||'null')}catch(e){}return root.StudioBrand.state(data&&data.version===3?data:defaults())}
 function write(data){root.localStorage.setItem(dataKey,JSON.stringify(data))}
 function response(data,status=200){return new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json'}})}
 function minutes(t){const p=String(t).slice(0,5).split(':');return +p[0]*60+ +p[1]}

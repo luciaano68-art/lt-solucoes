@@ -1,13 +1,13 @@
 {
   "id": "./yasmin-masson",
-  "name": "Yasmin Masson · Estética Especializada",
-  "short_name": "Yasmin Masson",
+  "name": "Salão · Agenda e Gestão",
+  "short_name": "Salão",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
-  "description": "Agenda e gestão — Yasmin Masson, Estética Especializada.",
+  "description": "Agenda, serviços e gestão do salão.",
   "icons": [
     {
       "src": "./icon-192.png",
