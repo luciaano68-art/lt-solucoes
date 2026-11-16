@@ -1,4 +1,4 @@
-const CACHE = 'marcio-app-v1';
+const CACHE = 'marcio-app-v2';
 const APP = new URL('./distribui.html', self.location).href;
 const ASSETS = ['./distribui.html', './marcio.webmanifest', './marcio-icon-192.png', './marcio-icon-512.png'].map(p => new URL(p, self.location).href);
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS))); self.skipWaiting(); });
