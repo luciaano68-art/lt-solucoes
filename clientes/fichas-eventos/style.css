@@ -186,3 +186,9 @@ body.cash-active{padding-bottom:calc(var(--nav-height) + var(--dock-height) + 22
 .pair-entry{font-family:ui-monospace,monospace;font-size:30px;font-weight:800;text-align:center;letter-spacing:3px;text-transform:uppercase;min-height:65px}
 .pair-entry::placeholder{color:#a896b7}
 }
+
+@media screen{
+.print-recovery{display:grid;gap:12px}
+.print-direct-link{display:block;text-align:center;text-decoration:none;margin-top:0;background:#6239b4;color:#fff;min-height:52px;line-height:28px}
+.saved-bar{flex-wrap:wrap}.saved-bar>span{flex:1;min-width:180px}
+}
