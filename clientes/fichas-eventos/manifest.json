@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Fichas para Eventos · LT Soluções",
+  "short_name": "LT Fichas",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f4",
+  "theme_color": "#132c26",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
