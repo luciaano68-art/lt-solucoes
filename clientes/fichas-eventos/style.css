@@ -127,3 +127,52 @@ dialog{padding:19px;width:calc(100vw - 22px)}.dialog-head h2{font-size:22px}.pay
 @media(max-height:500px){dialog{padding:14px 18px;max-height:calc(100dvh - 16px);border-radius:16px}.dialog-head{margin-bottom:9px;padding-bottom:8px}.dialog-head h2{font-size:21px}dialog label{margin-top:9px}dialog .full{margin-top:12px}}
 @media(prefers-reduced-motion:reduce){button{transition:none}.spinner{animation:none}}
 }
+
+/* A stable checkout area on phones AND tablets; cart length never moves it. */
+[hidden]{display:none!important}
+@media screen{
+:root{--nav-height:72px;--dock-height:82px}
+body.cash-active{padding-bottom:calc(var(--nav-height) + var(--dock-height) + 22px + env(safe-area-inset-bottom))}
+.cash-dock{position:fixed;inset-inline:0;bottom:calc(var(--nav-height) + env(safe-area-inset-bottom));z-index:30;background:#fffaf1;border-top:1px solid #dfd0e9;box-shadow:0 -5px 16px #3924440c;padding:10px 20px}
+.cash-dock-inner{max-width:1136px;margin:auto;display:flex;align-items:center;gap:15px;min-height:60px}
+.dock-total{display:flex;align-items:baseline;gap:18px;flex:1;min-width:0}
+.dock-total>span{color:#695475;font-size:15px;white-space:nowrap}
+.dock-total>strong{font-size:32px;font-variant-numeric:tabular-nums;line-height:1.1;color:#332045;letter-spacing:-1px;white-space:nowrap}
+.dock-review{min-height:54px;padding-inline:24px}
+.cash-dock .dock-pay{width:auto;min-width:220px;min-height:58px;font-size:22px;margin:0}
+.cash-dock .dock-pay:disabled{cursor:default;opacity:1;background:#eee6da;border-color:#dfd2bf;color:#81705f}
+.bottom{height:calc(var(--nav-height) + env(safe-area-inset-bottom));padding:7px 10px calc(7px + env(safe-area-inset-bottom))}
+.bottom button{min-height:0}
+.cash-page{padding-bottom:20px}
+.basket{display:flex;flex-direction:column;max-height:calc(100dvh - var(--nav-height) - var(--dock-height) - 42px);min-height:170px;position:sticky;top:14px;overflow:hidden}
+.basket>.between,.basket-total{flex:none}
+#basketRows{overflow:auto;overscroll-behavior:contain;min-height:0;flex:1;scrollbar-width:thin;padding-right:4px}
+.basket .basket-total{margin-bottom:0;padding-bottom:0;gap:8px}
+.basket .basket-total b{font-size:26px;white-space:nowrap}
+#products .product{min-height:150px;gap:9px;padding:11px 14px;box-shadow:0 2px 0 #e8dfcf6b}
+#products .product .product-name{font-size:18px;min-height:24px}
+.product-heading{min-height:29px}
+.product-symbol{width:29px;height:29px}.product-symbol .ui-icon{width:20px;height:20px}
+#products .product .price{font-size:25px}
+.cashier-title{margin-bottom:13px}.cashier-title h1{font-size:27px;margin-block:3px 5px}.cashier-title .eyebrow{display:none}
+.sector-tabs{margin-bottom:12px}.search-wrap{margin-bottom:14px}
+.basket-empty{padding:20px 7px}.basket-empty>.ui-icon{width:36px;height:36px}
+.review-footer{position:sticky;bottom:-20px;margin:16px -4px -4px;padding:16px 4px 4px;background:#fffdf9;border-top:1px dashed #d8c7e5}
+.review-footer strong{font-size:27px}
+@media(min-width:651px) and (max-height:600px){.basket{max-height:calc(100dvh - var(--nav-height) - var(--dock-height) - 28px)}.basket-empty{padding:6px}.basket-empty>.ui-icon,.basket-empty p{display:none}.basket h2{font-size:17px}.basket-total{padding-top:9px}.cash-dock{padding-block:7px}}
+@media(max-width:650px){
+:root{--dock-height:80px;--nav-height:68px}
+.cash-dock{padding:9px 12px}
+.cash-dock-inner{gap:9px;min-height:60px}
+.dock-total{display:block}.dock-total>span{display:block;font-size:11px;margin-bottom:3px}.dock-total>strong{font-size:26px;letter-spacing:-.8px}
+.dock-review{font-size:12px;min-height:47px;padding:10px 12px}
+.cash-dock .dock-pay{min-width:124px;min-height:56px;font-size:20px;padding:12px 16px}
+#products .product{min-height:148px;padding:10px 12px;gap:8px}
+#products .product .product-name{font-size:17px}
+#products .product .price{font-size:23px}
+.basket{display:none}
+.cash-page{padding-bottom:15px}
+.cashier-title h1{font-size:26px}
+}
+@media(max-width:370px){.dock-total>strong{font-size:23px}.cash-dock .dock-pay{min-width:105px;font-size:18px;padding-inline:11px}.dock-review{padding-inline:8px;font-size:11px}.cash-dock-inner{gap:6px}}
+}
