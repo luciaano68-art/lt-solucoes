@@ -24,3 +24,13 @@ Arquivo `core-tests.js` executa asserções de cálculos, troco, idempotência, 
 
 ## Implantação
 Arquivos estáticos servidos pelo Vercel existente. Service worker exclusivo do diretório. Cache atualizado alterando a versão em `sw.js`. Backend em `supabase/functions/lt-eventos-sync/`: aplicar schema.sql e implantar com JWT desligado, pois há autenticação própria no corpo. Nunca incluir service-role no frontend.
+
+
+## Conexão com código curto
+No aparelho principal: Cadastros → Conexão → Gerar código curto. No aparelho novo, ainda sem eventos: Conectar aparelho → digitar oito caracteres (ABCD-2345). A conexão inicial exige internet; os eventos continuam vendendo offline depois de baixados.
+
+O convite dura dez minutos, pode ser usado uma vez e é substituído ao gerar outro. Os aparelhos já conectados continuam conectados após o convite expirar. O convite conecta aos eventos da mesma organização, preservando o isolamento dos dados de cada evento existente.
+
+O código tem 40 bits aleatórios, com alfabeto de 32 símbolos sem I/O/0/1. Só o hash do convite é armazenado; as credenciais temporárias são cifradas com AES-GCM no servidor. O resgate remove a linha atomicamente. Há limite de 15 tentativas por minuto por identificador de endereço e acesso às tabelas/RPC somente pelo serviço. O cliente público nunca recebe a chave do servidor.
+
+Aplicar pairing-schema.sql uma vez antes de implantar a função atualizada. Testes do handler: node pair-tests.mjs (Node 24+, banco REST simulado e criptografia real). Os testes SQL de expiração, uso único e limite de tentativas foram executados na base real em uma transação revertida.
