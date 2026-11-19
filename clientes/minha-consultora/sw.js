@@ -1,7 +1,7 @@
 'use strict';
-const CACHE='lt-beauty-shell-v1';
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./style.css?v=1','./core.js?v=1','./importer.js?v=1','./app.js?v=1','./icon.svg','./icon-192.png','./icon-512.png','./manifest.json'])).then(()=>self.skipWaiting())));
+const CACHE='lt-beauty-shell-v2';
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./style.css?v=2','./core.js?v=1','./importer.js?v=1','./app.js?v=2','./catalog-view.js?v=2','./icon.svg','./icon-192.png','./icon-512.png','./manifest.json'])).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
-self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==self.location.origin)return;const u=new URL(e.request.url);if(!['/index.html','/style.css','/core.js','/importer.js','/app.js','/icon.svg','/manifest.json'].some(s=>u.pathname.endsWith(s))&&!u.pathname.endsWith('/'))return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==self.location.origin)return;const u=new URL(e.request.url);if(!['/index.html','/style.css','/core.js','/importer.js','/app.js','/catalog-view.js','/icon.svg','/manifest.json'].some(s=>u.pathname.endsWith(s))&&!u.pathname.endsWith('/'))return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});
 self.addEventListener('push',e=>{let data={title:'Novo pedido',body:'Você recebeu um novo pedido.'};try{Object.assign(data,e.data.json());}catch{}e.waitUntil(self.registration.showNotification(data.title,{body:data.body,icon:'./icon-192.png',badge:'./icon-192.png',tag:'beauty-order',data:{url:self.registration.scope}}));});
 self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(async windows=>{for(const w of windows)if(w.url.startsWith(self.registration.scope))return w.focus();return self.clients.openWindow(self.registration.scope);}));});

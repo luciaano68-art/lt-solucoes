@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import './catalog-view.js';
+const B=globalThis.BeautyCatalog;
+const state={imports:[{hash:'cycle'}],products:[{id:'a',name:'Base',image:'photo.jpg',source_pages:[26,27],source_page:27,source_hash:'cycle',source_page_image:'27.jpg',source_text:'private'},{id:'b',name:'Rascunho',source_pages:[60],source_page_image:'60.jpg',source_hash:'cycle'}],variants:[],sourcePages:{'cycle:26':'26.jpg','cycle:27':'27.jpg','cycle:60':'60.jpg','other:26':'unrelated.jpg'},customers:[{name:'private client'}]};
+const result=B.publicCatalog(state,[{id:'v',product_id:'a',shade:'Medium 6',price_cents:8490}]);
+assert.equal(result.products.length,1);assert.equal(result.products[0].source_text,undefined);assert.equal(result.customers,undefined);
+assert.deepEqual(result.sourcePages,{'cycle:26':'26.jpg','cycle:27':'27.jpg'});
+assert.deepEqual(B.pages(result).map(p=>p.number),[26,27]);assert.equal(B.pages(result)[0].products[0].name,'Base');
+const fallback={products:[{id:'manual',source_page:2,source_page_image:'manual.jpg'}]};assert.equal(B.pages(fallback)[0].url,'manual.jpg');
+console.log('Magazine grouping, page provenance and public catalog isolation passed.');
